@@ -29,6 +29,11 @@ Route::prefix('auth')->group(function () {
     });
 });
 
+Route::withoutMiddleware([\App\Http\Middleware\VerifyCsrfToken::class])->group(function () {
+    Route::post('/login', [AuthController::class, 'login']);
+    Route::post('/register', [AuthController::class, 'register']);
+});
+
 // ==================== PUBLIK (tanpa login) ====================
 Route::prefix('public')->group(function () {
     Route::get('/motors/unggulan', [KatalogController::class, 'unggulan']);
