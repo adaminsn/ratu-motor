@@ -147,7 +147,6 @@ export default function Wishlist() {
                 key={item.id} 
                 className="bg-white rounded-2xl shadow-sm overflow-hidden border border-gray-100 hover:shadow-xl transition-all duration-300 hover:-translate-y-1 group"
               >
-                <Link to={`/motor/${item.motor?.id}`} className="block">
                   <div className="aspect-[4/3] bg-gray-100 relative overflow-hidden">
                     {item.motor?.photos?.length > 0 ? (
                       <img
@@ -179,7 +178,7 @@ export default function Wishlist() {
                         handleRemove(item.id) 
                       }}
                       disabled={removing === item.id}
-                      className="absolute top-2 right-2 p-2 bg-red-500 hover:bg-red-600 text-white rounded-full shadow-lg transition-all duration-300 hover:scale-110 disabled:opacity-50"
+                      className="absolute top-2 right-2 p-2 bg-red-500 hover:bg-red-600 text-white rounded-full shadow-lg transition-all duration-300 hover:scale-110 disabled:opacity-50 z-10"
                     >
                       {removing === item.id ? (
                         <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -187,26 +186,16 @@ export default function Wishlist() {
                         <Trash2 size={14} />
                       )}
                     </button>
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
                   </div>
-                </Link>
                 <div className="p-4">
-                  <Link to={`/motor/${item.motor?.id}`}>
-                    <h3 className="font-bold text-gray-800 hover:text-[#10b981] transition-colors line-clamp-1">
-                      {item.motor?.merk} {item.motor?.tipe}
-                    </h3>
-                  </Link>
+                  <h3 className="font-bold text-gray-800 line-clamp-1">
+                    {item.motor?.merk} {item.motor?.tipe}
+                  </h3>
                   <p className="text-sm text-gray-500">{item.motor?.tahun} · {item.motor?.warna}</p>
                   <p className="text-lg font-bold text-[#10b981] mt-2">
                     {formatRupiah(item.motor?.harga_jual)}
                   </p>
-                  <Link
-                    to={`/motor/${item.motor?.id}`}
-                    className="mt-3 w-full flex items-center justify-center gap-2 bg-[#1a2f4f] hover:bg-[#12223a] text-white font-semibold py-2 rounded-xl transition-all duration-300 text-sm hover:scale-[1.02]"
-                  >
-                    <ShoppingCart size={16} />
-                    Lihat Detail
-                  </Link>
                 </div>
               </div>
             ))}

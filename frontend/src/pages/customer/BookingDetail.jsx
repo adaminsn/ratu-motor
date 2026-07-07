@@ -284,14 +284,7 @@ export default function BookingDetail() {
                 {cancelling ? 'Membatalkan...' : 'Batalkan Booking'}
               </button>
             )}
-            {booking.motor && (
-              <Link
-                to={`/motor/${booking.motor.id}`}
-                className="px-4 py-2 bg-[#10b981] hover:bg-emerald-600 text-white rounded-lg text-sm font-semibold transition-colors"
-              >
-                Lihat Motor
-              </Link>
-            )}
+
             <Link
               to="/customer/booking"
               className="px-4 py-2 border border-gray-200 hover:bg-gray-50 text-gray-600 rounded-lg text-sm font-semibold transition-colors"

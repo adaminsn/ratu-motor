@@ -12,16 +12,9 @@ class RoleSeeder extends Seeder
     {
         app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
 
-        $roles = ['super_admin', 'admin', 'sales', 'kasir', 'customer'];
+        $roles = ['super_admin', 'admin', 'teknisi', 'kasir', 'customer'];
         foreach ($roles as $roleName) {
             Role::firstOrCreate(['name' => $roleName]);
-        }
-
-        // Migrasi role lama teknisi -> sales (jika ada dari seed sebelumnya)
-        $oldTeknisi = Role::where('name', 'teknisi')->first();
-        if ($oldTeknisi) {
-            User::role('teknisi')->get()->each(fn (User $user) => $user->syncRoles(['sales']));
-            $oldTeknisi->delete();
         }
 
         // Super Admin - Dwi Purnomo
@@ -48,7 +41,7 @@ class RoleSeeder extends Seeder
         );
         $afrisal->syncRoles(['admin']);
 
-        // Sales - Durrahman
+        // Teknisi - Durrahman
         $durrahman = User::updateOrCreate(
             ['email' => 'durrahman@ratumotor.test'],
             [
@@ -58,7 +51,7 @@ class RoleSeeder extends Seeder
                 'no_hp' => '081234567893',
             ]
         );
-        $durrahman->syncRoles(['sales']);
+        $durrahman->syncRoles(['teknisi']);
 
         // Kasir - Iyut
         $iyut = User::updateOrCreate(
@@ -100,7 +93,7 @@ class RoleSeeder extends Seeder
         $this->command->info('[OK] Roles dan Users berhasil dibuat!');
         $this->command->line('  Super Admin : dwi@ratumotor.test / password');
         $this->command->line('  Admin       : afrisal@ratumotor.test / password');
-        $this->command->line('  Sales       : durrahman@ratumotor.test / password');
+        $this->command->line('  Teknisi     : durrahman@ratumotor.test / password');
         $this->command->line('  Kasir       : iyut@ratumotor.test / password');
         $this->command->line('  Customer    : budi@ratumotor.test / password');
         $this->command->newLine();
