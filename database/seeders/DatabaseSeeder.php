@@ -13,8 +13,9 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         $this->call(RoleSeeder::class);
-        $this->call(MotorSeeder::class);
-        $this->call(KeuanganSeeder::class);
-        $this->call(TransaksiSeeder::class);
+        // Dihapus agar tidak menghasilkan data dummy selain role/user
+        // $this->call(MotorSeeder::class);
+        // $this->call(KeuanganSeeder::class);
+        // $this->call(TransaksiSeeder::class);
     }
 }

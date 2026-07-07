@@ -84,6 +84,18 @@ class RoleSeeder extends Seeder
         );
         $budi->syncRoles(['customer']);
 
+        // Customer - Adam (Dari prompt user)
+        $adam = User::updateOrCreate(
+            ['email' => 'adam@tes.com'],
+            [
+                'name' => 'Adam',
+                'password' => bcrypt('password'),
+                'type' => 'customer',
+                'no_hp' => '081234567895',
+            ]
+        );
+        $adam->syncRoles(['customer']);
+
         $this->command->newLine();
         $this->command->info('[OK] Roles dan Users berhasil dibuat!');
         $this->command->line('  Super Admin : dwi@ratumotor.test / password');

@@ -17,9 +17,6 @@ return new class extends Migration
             $table->foreignId('motor_id')->constrained('motors')->cascadeOnDelete();
             $table->foreignId('user_id')->constrained('users')->cascadeOnDelete();
             $table->foreignId('customer_id')->nullable()->constrained('customers')->cascadeOnDelete();
-            $table->string('nama_pembeli')->nullable();
-            $table->string('no_hp_pembeli')->nullable();
-            $table->text('alamat_pembeli')->nullable();
             $table->string('no_invoice')->nullable();
             $table->date('tanggal_transaksi');
             $table->decimal('harga_kesepakatan', 15, 2);

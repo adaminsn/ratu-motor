@@ -23,7 +23,12 @@ class BookingController extends Controller
         // Tambahkan search
         if ($request->filled('search')) {
             $query->where(function($q) use ($request) {
-                $q->where('nama_pembeli', 'like', '%' . $request->search . '%')
+                $q->whereHas('user', function($q2) use ($request) {
+                      $q2->where('name', 'like', '%' . $request->search . '%');
+                  })
+                  ->orWhereHas('customer', function($q2) use ($request) {
+                      $q2->where('nama', 'like', '%' . $request->search . '%');
+                  })
                   ->orWhereHas('motor', function($q2) use ($request) {
                       $q2->where('merk', 'like', '%' . $request->search . '%')
                          ->orWhere('tipe', 'like', '%' . $request->search . '%');
@@ -178,7 +183,7 @@ class BookingController extends Controller
             }
 
             // Update status
-            $booking->status = 'dibatal';
+            $booking->status = 'dibatalkan';
             $booking->save();
             $booking->refresh();
             

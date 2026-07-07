@@ -13,9 +13,6 @@ return new class extends Migration
             $table->foreignId('motor_id')->constrained()->cascadeOnDelete();
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
             $table->foreignId('customer_id')->nullable()->constrained('customers')->nullOnDelete();
-            $table->string('nama_pembeli');
-            $table->string('no_hp');
-            $table->text('alamat')->nullable();
             $table->enum('jenis_bayar', ['tunai', 'kredit', 'indent']);
             $table->date('tanggal_booking');
             $table->text('pesan')->nullable();

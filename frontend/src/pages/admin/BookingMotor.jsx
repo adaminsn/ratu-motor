@@ -23,14 +23,14 @@ const STATUS_BADGES = {
   menunggu: 'bg-yellow-100 text-yellow-700 border-yellow-200',
   dikonfirmasi: 'bg-blue-100 text-blue-700 border-blue-200',
   selesai: 'bg-emerald-100 text-emerald-700 border-emerald-200',
-  dibatal: 'bg-red-100 text-red-700 border-red-200'
+  dibatalkan: 'bg-red-100 text-red-700 border-red-200'
 }
 
 const STATUS_LABELS = {
   menunggu: 'Menunggu',
   dikonfirmasi: 'Dikonfirmasi',
   selesai: 'Selesai',
-  dibatal: 'Dibatalkan'
+  dibatalkan: 'Dibatalkan'
 }
 
 export default function BookingMotor() {
@@ -174,7 +174,7 @@ export default function BookingMotor() {
             <option value="menunggu">🟡 Menunggu</option>
             <option value="dikonfirmasi">🔵 Dikonfirmasi</option>
             <option value="selesai">🟢 Selesai</option>
-            <option value="dibatal">🔴 Dibatalkan</option>
+            <option value="dibatalkan">🔴 Dibatalkan</option>
           </select>
         </div>
         {statusFilter && (

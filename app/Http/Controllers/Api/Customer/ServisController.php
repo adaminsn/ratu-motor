@@ -20,11 +20,15 @@ class ServisController extends Controller
     {
         $user = Auth::user();
         
-        $servis = Servis::with('motor')
-            ->where('customer_id', $user->id)
-            ->orWhere('user_id', $user->id)
-            ->latest()
-            ->get();
+        $customer = DB::table('customers')->where('user_id', $user->id)->first();
+        
+        $query = Servis::with('motor')->where('user_id', $user->id);
+        
+        if ($customer) {
+            $query->orWhere('customer_id', $customer->id);
+        }
+        
+        $servis = $query->latest()->get();
 
         return response()->json([
             'data' => $servis
@@ -39,10 +43,8 @@ class ServisController extends Controller
     {
         $user = Auth::user();
         
-        // ===== CARA 1: Langsung dari transaksi dengan customer_id = user_id =====
-        $motorIds1 = Transaksi::where('customer_id', $user->id)
-            ->pluck('motor_id')
-            ->toArray();
+        // ===== CARA 1: Langsung dari transaksi dengan customer_id = user_id (BISA SALAH KARENA BEDA TABEL) =====
+        // Dihapus karena customer_id di transaksi mengarah ke customers.id, bukan users.id
         
         // ===== CARA 2: Dari transaksi melalui tabel customers =====
         $customer = DB::table('customers')->where('user_id', $user->id)->first();
@@ -61,13 +63,16 @@ class ServisController extends Controller
             ->toArray();
         
         // ===== CARA 4: Dari tabel servis (jika customer pernah servis) =====
-        $motorIds4 = Servis::where('customer_id', $user->id)
-            ->orWhere('user_id', $user->id)
-            ->pluck('motor_id')
-            ->toArray();
+        $motorIds4 = Servis::where('user_id', $user->id);
+        
+        if ($customer) {
+            $motorIds4 = $motorIds4->orWhere('customer_id', $customer->id);
+        }
+        
+        $motorIds4 = $motorIds4->pluck('motor_id')->toArray();
         
         // ===== GABUNGKAN SEMUA ID =====
-        $allMotorIds = array_merge($motorIds1, $motorIds2, $motorIds3, $motorIds4);
+        $allMotorIds = array_merge($motorIds2, $motorIds3, $motorIds4);
         $uniqueMotorIds = array_unique($allMotorIds);
         
         // ===== AMBIL MOTOR =====
@@ -99,7 +104,6 @@ class ServisController extends Controller
         $debug = [
             'user_id' => $user->id,
             'user_name' => $user->name,
-            'motor_ids_from_transaksi_1' => $motorIds1,
             'motor_ids_from_transaksi_2' => $motorIds2,
             'motor_ids_from_transaksi_3' => $motorIds3,
             'motor_ids_from_servis' => $motorIds4,
@@ -143,11 +147,8 @@ class ServisController extends Controller
 
         // CEK: Apakah motor ini pernah dibeli oleh customer?
         $pernahBeli = Transaksi::where('motor_id', $request->motor_id)
-            ->where(function($query) use ($user) {
-                $query->where('customer_id', $user->id)
-                      ->orWhereHas('customer', function($q) use ($user) {
-                          $q->where('user_id', $user->id);
-                      });
+            ->whereHas('customer', function($q) use ($user) {
+                $q->where('user_id', $user->id);
             })
             ->exists();
 
@@ -190,11 +191,13 @@ class ServisController extends Controller
             ], 422);
         }
 
+        $customer = \App\Models\Customer::where('user_id', $user->id)->first();
+
         // Buat servis
         $servis = Servis::create([
             'motor_id'        => $request->motor_id,
             'user_id'         => $user->id,
-            'customer_id'     => $user->id,
+            'customer_id'     => $customer ? $customer->id : null,
             'nama_pelanggan'  => $user->name,
             'no_hp'           => $user->no_hp ?? '-',
             'alamat'          => $user->alamat ?? null,
@@ -219,10 +222,16 @@ class ServisController extends Controller
     {
         $user = Auth::user();
         
-        $servis = Servis::with('motor')
-            ->where('customer_id', $user->id)
-            ->orWhere('user_id', $user->id)
-            ->findOrFail($id);
+        $customer = DB::table('customers')->where('user_id', $user->id)->first();
+        
+        $query = Servis::with('motor')->where(function($q) use ($user, $customer) {
+            $q->where('user_id', $user->id);
+            if ($customer) {
+                $q->orWhere('customer_id', $customer->id);
+            }
+        });
+        
+        $servis = $query->findOrFail($id);
 
         return response()->json([
             'data' => $servis
@@ -236,9 +245,16 @@ class ServisController extends Controller
     {
         $user = Auth::user();
         
-        $servis = Servis::where('customer_id', $user->id)
-            ->orWhere('user_id', $user->id)
-            ->whereIn('status', ['menunggu', 'dikerjakan'])
+        $customer = DB::table('customers')->where('user_id', $user->id)->first();
+        
+        $query = Servis::where(function($q) use ($user, $customer) {
+            $q->where('user_id', $user->id);
+            if ($customer) {
+                $q->orWhere('customer_id', $customer->id);
+            }
+        });
+        
+        $servis = $query->whereIn('status', ['menunggu', 'dikerjakan'])
             ->findOrFail($id);
 
         $servis->update(['status' => 'batal']);
