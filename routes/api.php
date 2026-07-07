@@ -31,6 +31,7 @@ Route::prefix('auth')->group(function () {
 
 // ==================== PUBLIK (tanpa login) ====================
 Route::prefix('public')->group(function () {
+    Route::get('/motors/unggulan', [KatalogController::class, 'unggulan']);
     Route::get('/motors', [KatalogController::class, 'index']);
     Route::get('/motors/{id}', [KatalogController::class, 'show']);
 });

@@ -63,6 +63,7 @@ class MotorController extends Controller
             'harga_jual' => 'required|numeric|min:0',
             'harga_minimal' => 'nullable|numeric|min:0',
             'status' => 'nullable|in:tersedia,reserved,terjual',
+            'is_unggulan' => 'boolean',
             'tanggal_masuk' => 'required|date',
         ]);
 
@@ -98,6 +99,7 @@ class MotorController extends Controller
             'harga_jual' => 'sometimes|required|numeric|min:0',
             'harga_minimal' => 'nullable|numeric|min:0',
             'status' => 'sometimes|required|in:tersedia,reserved,terjual',
+            'is_unggulan' => 'boolean',
             'tanggal_masuk' => 'sometimes|required|date',
         ]);
 

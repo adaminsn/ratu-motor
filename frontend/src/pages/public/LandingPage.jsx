@@ -6,10 +6,22 @@ import {
   Star, Users, TrendingUp, Zap, Heart, ChevronRight,
   MapPin, Phone, Mail, Facebook, Instagram, Youtube, Twitter
 } from 'lucide-react'
+import api from '../../api/axios'
+
+const formatRupiah = (value) => {
+  if (!value) return 'Rp 0'
+  return new Intl.NumberFormat('id-ID', {
+    style: 'currency',
+    currency: 'IDR',
+    minimumFractionDigits: 0
+  }).format(value)
+}
 
 export default function LandingPage() {
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 })
   const sectionRef = useRef(null)
+  const [unggulanMotors, setUnggulanMotors] = useState([])
+  const [loadingUnggulan, setLoadingUnggulan] = useState(true)
 
   useEffect(() => {
     const handleMouseMove = (e) => {
@@ -17,6 +29,20 @@ export default function LandingPage() {
     }
     window.addEventListener('mousemove', handleMouseMove)
     return () => window.removeEventListener('mousemove', handleMouseMove)
+  }, [])
+
+  useEffect(() => {
+    const fetchUnggulan = async () => {
+      try {
+        const response = await api.get('/public/motors/unggulan')
+        setUnggulanMotors(response.data?.data || [])
+      } catch (error) {
+        console.error('Error fetching motor unggulan:', error)
+      } finally {
+        setLoadingUnggulan(false)
+      }
+    }
+    fetchUnggulan()
   }, [])
 
   const features = [
@@ -235,32 +261,54 @@ export default function LandingPage() {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {[1, 2, 3, 4].map((_, index) => (
-              <div
-                key={index}
-                className="group bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-500 hover:-translate-y-2"
-              >
-                <div className="aspect-[4/3] bg-gradient-to-br from-gray-100 to-gray-200 relative overflow-hidden">
-                  <Bike size={48} className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-gray-300" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-[#1a2f4f]/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                  <div className="absolute top-2 right-2 bg-emerald-500 text-white text-xs font-semibold px-2.5 py-1 rounded-full">
-                    Tersedia
+            {loadingUnggulan ? (
+              [1, 2, 3, 4].map((_, index) => (
+                <div key={index} className="bg-white rounded-2xl h-80 animate-pulse border border-gray-100" />
+              ))
+            ) : unggulanMotors.length > 0 ? (
+              unggulanMotors.map((motor) => (
+                <div
+                  key={motor.id}
+                  className="group bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-500 hover:-translate-y-2 border border-gray-100"
+                >
+                  <div className="aspect-[4/3] bg-gray-100 relative overflow-hidden">
+                    {motor.photos && motor.photos.length > 0 ? (
+                      <img 
+                        src={motor.photos[0].url} 
+                        alt={motor.merk}
+                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                        onError={(e) => {
+                          e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 24 24" fill="none" stroke="%239ca3af" stroke-width="2"%3E%3Crect x="3" y="3" width="18" height="18" rx="2"%3E%3C/rect%3E%3Ccircle cx="8.5" cy="8.5" r="1.5"%3E%3C/circle%3E%3Cpath d="M21 15l-5-5L5 21"%3E%3C/path%3E%3C/svg%3E'
+                        }}
+                      />
+                    ) : (
+                      <Bike size={48} className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-gray-300" />
+                    )}
+                    <div className="absolute inset-0 bg-gradient-to-t from-[#1a2f4f]/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                    <div className="absolute top-2 right-2 bg-emerald-500 text-white text-xs font-semibold px-2.5 py-1 rounded-full shadow-lg shadow-emerald-500/30">
+                      Tersedia
+                    </div>
+                  </div>
+                  <div className="p-4">
+                    <h3 className="font-bold text-gray-800 line-clamp-1">{motor.merk} {motor.tipe}</h3>
+                    <p className="text-sm text-gray-500">{motor.tahun} · {motor.warna}</p>
+                    <p className="text-lg font-bold text-[#10b981] mt-2">{formatRupiah(motor.harga_jual)}</p>
+                    <Link
+                      to={`/motor/${motor.id}`}
+                      className="mt-3 w-full flex items-center justify-center gap-2 bg-[#1a2f4f] hover:bg-[#12223a] text-white font-semibold py-2 rounded-xl transition-all duration-300 text-sm group-hover:shadow-lg hover:scale-[1.02]"
+                    >
+                      Lihat Detail
+                      <ChevronRight size={16} className="group-hover:translate-x-1 transition-transform" />
+                    </Link>
                   </div>
                 </div>
-                <div className="p-4">
-                  <h3 className="font-bold text-gray-800">Honda Vario 160</h3>
-                  <p className="text-sm text-gray-500">2024 · Hitam Matte</p>
-                  <p className="text-lg font-bold text-[#10b981] mt-2">Rp 25.000.000</p>
-                  <Link
-                    to={`/motor/${index + 1}`}
-                    className="mt-3 w-full flex items-center justify-center gap-2 bg-[#1a2f4f] hover:bg-[#12223a] text-white font-semibold py-2 rounded-xl transition-all duration-300 text-sm group-hover:shadow-lg"
-                  >
-                    Lihat Detail
-                    <ChevronRight size={16} className="group-hover:translate-x-1 transition-transform" />
-                  </Link>
-                </div>
+              ))
+            ) : (
+              <div className="col-span-full py-12 text-center text-gray-400">
+                <Bike size={48} className="mx-auto mb-3 opacity-20" />
+                <p>Belum ada motor unggulan saat ini.</p>
               </div>
-            ))}
+            )}
           </div>
 
           <div className="text-center mt-12">
@@ -275,44 +323,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ===== TESTIMONI SECTION ===== */}
-      <section className="py-20 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <span className="inline-block px-4 py-1 bg-[#10b981]/10 text-[#10b981] text-sm font-semibold rounded-full mb-4">
-              Testimoni
-            </span>
-            <h2 className="text-3xl sm:text-4xl font-bold text-[#1a2f4f]">
-              Apa Kata <span className="text-[#10b981]">Pelanggan</span> Kami?
-            </h2>
-          </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {testimonials.map((item, index) => (
-              <div
-                key={index}
-                className="bg-gray-50 hover:bg-white rounded-2xl p-6 transition-all duration-500 hover:shadow-xl hover:-translate-y-2"
-              >
-                <div className="flex items-center gap-1 mb-4">
-                  {[...Array(5)].map((_, i) => (
-                    <Star key={i} size={16} className="fill-[#10b981] text-[#10b981]" />
-                  ))}
-                </div>
-                <p className="text-gray-600 italic">"{item.text}"</p>
-                <div className="flex items-center gap-3 mt-4 pt-4 border-t border-gray-100">
-                  <div className="w-10 h-10 bg-gradient-to-br from-[#10b981] to-emerald-500 rounded-full flex items-center justify-center text-white font-bold">
-                    {item.name.charAt(0)}
-                  </div>
-                  <div>
-                    <p className="font-semibold text-gray-800">{item.name}</p>
-                    <p className="text-xs text-gray-400">Pelanggan Ratu Motor</p>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
 
       {/* ===== PARTNER SECTION ===== */}
       <section className="py-16 bg-gray-50">

@@ -57,4 +57,16 @@ class KatalogController extends Controller
             'data' => $motor
         ]);
     }
+
+    public function unggulan()
+    {
+        $motors = Motor::with('photos')
+            ->where('status', 'tersedia')
+            ->where('is_unggulan', true)
+            ->latest()
+            ->take(8) // Limit to 8 featured motors
+            ->get();
+
+        return PublicMotorResource::collection($motors);
+    }
 }

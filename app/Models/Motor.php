@@ -30,6 +30,7 @@ class Motor extends Model implements HasMedia
         'harga_jual',
         'harga_minimal',
         'status',
+        'is_unggulan',
         'tanggal_masuk',
     ];
 
@@ -39,6 +40,7 @@ class Motor extends Model implements HasMedia
             'harga_beli' => 'decimal:2',
             'harga_jual' => 'decimal:2',
             'harga_minimal' => 'decimal:2',
+            'is_unggulan' => 'boolean',
             'tanggal_masuk' => 'date',
         ];
     }

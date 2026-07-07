@@ -4,7 +4,7 @@ import { useSearchParams } from 'react-router-dom'
 import { 
   Car, Search, Plus, Edit2, Trash2, Filter, 
   ChevronLeft, ChevronRight, X, Eye, ShieldAlert,
-  AlertCircle, DollarSign, Calendar, RefreshCw, Loader2
+  AlertCircle, DollarSign, Calendar, RefreshCw, Loader2, Star
 } from 'lucide-react'
 import api from '../../api/axios'
 import toast from 'react-hot-toast'
@@ -151,6 +151,7 @@ export default function Motors({ openCreate = false }) {
     harga_jual: '',
     harga_minimal: '',
     status: 'tersedia',
+    is_unggulan: false,
     tanggal_masuk: new Date().toISOString().split('T')[0]
   }
   const [formData, setFormData] = useState(initialFormState)
@@ -387,6 +388,7 @@ export default function Motors({ openCreate = false }) {
       harga_jual: motor.harga_jual || '',
       harga_minimal: motor.harga_minimal || '',
       status: motor.status || 'tersedia',
+      is_unggulan: motor.is_unggulan ? true : false,
       tanggal_masuk: motor.tanggal_masuk || new Date().toISOString().split('T')[0]
     })
     setSelectedFiles([])
@@ -663,7 +665,10 @@ export default function Motors({ openCreate = false }) {
                     
                     {/* Brand & Tipe */}
                     <td className="px-6 py-4.5">
-                      <div className="font-semibold text-gray-800">{motor.merk}</div>
+                      <div className="font-semibold text-gray-800 flex items-center gap-1">
+                        {motor.merk}
+                        {motor.is_unggulan && <Star size={14} className="fill-amber-400 text-amber-400" title="Motor Unggulan" />}
+                      </div>
                       <div className="text-xs text-gray-400 mt-0.5">{motor.tipe}</div>
                       {motor.supplier && (
                         <div className="text-[10px] text-gray-400 mt-0.5">via {motor.supplier.nama}</div>
@@ -901,6 +906,22 @@ export default function Motors({ openCreate = false }) {
                     <option value="reserved">Reserved</option>
                     <option value="terjual">Terjual</option>
                   </select>
+                </div>
+
+                {/* Is Unggulan */}
+                <div className="col-span-2 flex items-center gap-2 bg-amber-50 p-3 rounded-lg border border-amber-100">
+                  <input
+                    type="checkbox"
+                    id="is_unggulan"
+                    name="is_unggulan"
+                    checked={formData.is_unggulan}
+                    onChange={(e) => setFormData(prev => ({ ...prev, is_unggulan: e.target.checked }))}
+                    className="w-4 h-4 text-[#10b981] focus:ring-[#10b981] border-gray-300 rounded"
+                  />
+                  <label htmlFor="is_unggulan" className="text-sm font-semibold text-amber-800 cursor-pointer">
+                    Jadikan Motor Unggulan
+                  </label>
+                  <span className="text-xs text-amber-600 ml-2">(Akan ditampilkan di halaman beranda / Landing Page)</span>
                 </div>
 
                 {/* No Rangka */}
@@ -1144,7 +1165,10 @@ export default function Motors({ openCreate = false }) {
                   {selectedMotor.merk ? selectedMotor.merk[0].toUpperCase() : 'M'}
                 </div>
                 <div>
-                  <h3 className="font-bold text-gray-800 text-base">{selectedMotor.merk}</h3>
+                  <h3 className="font-bold text-gray-800 text-base flex items-center gap-1">
+                    {selectedMotor.merk}
+                    {selectedMotor.is_unggulan && <Star size={16} className="fill-amber-400 text-amber-400" title="Motor Unggulan" />}
+                  </h3>
                   <p className="text-xs text-gray-500">{selectedMotor.tipe} · {selectedMotor.tahun}</p>
                 </div>
                 <div className={`ml-auto border font-bold px-2.5 py-0.5 rounded-full text-xs uppercase ${STATUS_BADGES[selectedMotor.status]}`}>
