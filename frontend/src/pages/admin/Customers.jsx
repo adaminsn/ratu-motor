@@ -5,7 +5,7 @@ import {
   Users, Search, Plus, Edit2, Trash2, Eye, Filter,
   ChevronLeft, ChevronRight, X, ShieldAlert,
   AlertCircle, Phone, MapPin, Mail, Calendar,
-  UserPlus, UserCheck
+  UserPlus, UserCheck, Loader2
 } from 'lucide-react'
 import api from '../../api/axios'
 import toast from 'react-hot-toast'
@@ -28,6 +28,51 @@ const formatRupiah = (value) => {
     minimumFractionDigits: 0
   }).format(value)
 }
+
+// ===== SKELETON COMPONENTS =====
+
+// Skeleton untuk Header
+const SkeletonHeader = () => (
+  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 animate-pulse">
+    <div>
+      <div className="h-8 w-40 bg-gray-200 rounded-lg" />
+      <div className="h-4 w-56 bg-gray-200 rounded-lg mt-1" />
+    </div>
+    <div className="h-10 w-40 bg-gray-200 rounded-xl" />
+  </div>
+)
+
+// Skeleton untuk Search
+const SkeletonSearch = () => (
+  <div className="bg-white rounded-xl shadow-sm p-4 animate-pulse">
+    <div className="h-11 w-full bg-gray-200 rounded-xl" />
+  </div>
+)
+
+// Skeleton untuk Table
+const SkeletonTable = () => (
+  <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100 animate-pulse">
+    <div className="p-4 border-b border-gray-100">
+      <div className="h-5 w-32 bg-gray-200 rounded" />
+    </div>
+    {[1, 2, 3, 4, 5].map((i) => (
+      <div key={i} className="p-4 border-b border-gray-100 flex items-center gap-4">
+        <div className="flex-1">
+          <div className="h-4 w-32 bg-gray-200 rounded" />
+          <div className="h-3 w-24 bg-gray-200 rounded mt-1" />
+        </div>
+        <div className="h-4 w-28 bg-gray-200 rounded" />
+        <div className="h-4 w-24 bg-gray-200 rounded" />
+        <div className="h-5 w-16 bg-gray-200 rounded-full" />
+        <div className="flex gap-2">
+          <div className="h-8 w-8 bg-gray-200 rounded-lg" />
+          <div className="h-8 w-8 bg-gray-200 rounded-lg" />
+          <div className="h-8 w-8 bg-gray-200 rounded-lg" />
+        </div>
+      </div>
+    ))}
+  </div>
+)
 
 export default function Customers() {
   const [customers, setCustomers] = useState([])
@@ -152,7 +197,21 @@ export default function Customers() {
     if (totalTransaksi > 1) {
       return { label: 'Loyal', color: 'bg-emerald-100 text-emerald-700 border-emerald-200' }
     }
-    return { label: 'Baru', color: 'bg-blue-100 text-blue-700 border-blue-200' }
+    if (totalTransaksi === 1) {
+      return { label: 'Pertama', color: 'bg-blue-100 text-blue-700 border-blue-200' }
+    }
+    return { label: 'Baru', color: 'bg-gray-100 text-gray-600 border-gray-200' }
+  }
+
+  // ===== RENDER SKELETON SAAT LOADING =====
+  if (loading) {
+    return (
+      <div className="space-y-4 md:space-y-6 pb-8">
+        <SkeletonHeader />
+        <SkeletonSearch />
+        <SkeletonTable />
+      </div>
+    )
   }
 
   return (
@@ -162,7 +221,7 @@ export default function Customers() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-[#1a2f4f] flex items-center gap-2">
-            <Users size={24} className="text-[#f97316]" />
+            <Users size={24} className="text-[#10b981]" />
             Customer
           </h1>
           <p className="text-sm text-gray-500 mt-1">
@@ -171,7 +230,7 @@ export default function Customers() {
         </div>
         <button
           onClick={openCreateModal}
-          className="flex items-center gap-2 bg-[#f97316] hover:bg-orange-600 text-white font-semibold px-4 py-2.5 rounded-xl shadow-lg shadow-orange-500/10 transition-all"
+          className="flex items-center gap-2 bg-[#10b981] hover:bg-emerald-600 text-white font-semibold px-4 py-2.5 rounded-xl shadow-lg shadow-emerald-500/20 transition-all"
         >
           <UserPlus size={18} />
           <span>Tambah Customer</span>
@@ -187,28 +246,30 @@ export default function Customers() {
             placeholder="Cari customer berdasarkan nama, email, atau no HP..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-11 pr-4 py-2.5 border border-gray-200 rounded-xl focus:border-[#1a2f4f] outline-none text-sm"
+            className="w-full pl-11 pr-4 py-2.5 border border-gray-200 rounded-xl focus:border-[#10b981] focus:ring-2 focus:ring-[#10b981]/10 outline-none text-sm"
           />
         </div>
       </div>
 
       {/* Table */}
       <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100">
-        {loading ? (
-          <div className="flex flex-col items-center justify-center py-20">
-            <div className="w-10 h-10 border-4 border-[#1a2f4f] border-t-[#f97316] rounded-full animate-spin" />
-            <p className="text-gray-400 text-xs mt-4">Memuat data customer...</p>
-          </div>
-        ) : customers.length === 0 ? (
+        {customers.length === 0 ? (
           <div className="py-16 text-center text-gray-400 text-sm">
             <Users size={48} className="mx-auto mb-3 text-gray-300" />
             <p>Belum ada data customer</p>
+            <button
+              onClick={openCreateModal}
+              className="mt-3 text-[#10b981] hover:text-emerald-600 font-medium text-sm"
+            >
+              Tambahkan customer sekarang →
+            </button>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="bg-gray-50 border-b border-gray-100 text-xs text-gray-400 uppercase tracking-wider">
+                  <th className="px-6 py-4 font-semibold">#</th>
                   <th className="px-6 py-4 font-semibold">Customer</th>
                   <th className="px-6 py-4 font-semibold">Kontak</th>
                   <th className="px-6 py-4 font-semibold">Bergabung</th>
@@ -217,10 +278,13 @@ export default function Customers() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
-                {customers.map((customer) => {
+                {customers.map((customer, index) => {
                   const badge = getCustomerBadge(customer)
                   return (
                     <tr key={customer.id} className="hover:bg-gray-50/50 transition-colors">
+                      <td className="px-6 py-4 text-xs text-gray-400">
+                        {((currentPage - 1) * 10) + index + 1}
+                      </td>
                       <td className="px-6 py-4">
                         <div className="font-semibold text-gray-800">{customer.nama}</div>
                         <div className="text-xs text-gray-400">{customer.email || '-'}</div>
@@ -230,6 +294,12 @@ export default function Customers() {
                           <Phone size={14} className="text-gray-400" />
                           {customer.no_hp || '-'}
                         </div>
+                        {customer.alamat && (
+                          <div className="text-xs text-gray-400 flex items-center gap-1 mt-0.5">
+                            <MapPin size={12} className="text-gray-300" />
+                            <span className="truncate max-w-[120px]">{customer.alamat}</span>
+                          </div>
+                        )}
                       </td>
                       <td className="px-6 py-4 text-sm">
                         {formatDate(customer.created_at)}
@@ -243,14 +313,14 @@ export default function Customers() {
                         <div className="flex items-center justify-end gap-2">
                           <Link
                             to={`/admin/customers/${customer.id}`}
-                            className="p-1.5 text-gray-400 hover:text-[#1a2f4f] rounded-lg hover:bg-gray-100 transition-colors"
+                            className="p-1.5 text-gray-400 hover:text-[#10b981] rounded-lg hover:bg-gray-100 transition-colors"
                             title="Detail Customer"
                           >
                             <Eye size={16} />
                           </Link>
                           <button
                             onClick={() => openEditModal(customer)}
-                            className="p-1.5 text-gray-400 hover:text-[#f97316] rounded-lg hover:bg-gray-100 transition-colors"
+                            className="p-1.5 text-gray-400 hover:text-[#10b981] rounded-lg hover:bg-gray-100 transition-colors"
                             title="Edit Customer"
                           >
                             <Edit2 size={16} />
@@ -306,7 +376,7 @@ export default function Customers() {
 
             <div className="bg-[#1a2f4f] text-white px-6 py-4 flex items-center justify-between">
               <h2 className="text-lg font-bold flex items-center gap-2">
-                <Users size={20} className="text-[#f97316]" />
+                <Users size={20} className="text-[#10b981]" />
                 <span>{modalMode === 'create' ? 'Tambah Customer' : 'Edit Customer'}</span>
               </h2>
               <button onClick={() => setIsModalOpen(false)} className="text-white/60 hover:text-white">
@@ -316,7 +386,7 @@ export default function Customers() {
 
             <form onSubmit={handleSubmit} className="p-6 space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-gray-600 mb-1">Nama Lengkap *</label>
+                <label className="block text-xs font-semibold text-gray-600 mb-1">Nama Lengkap <span className="text-red-500">*</span></label>
                 <input
                   type="text"
                   name="nama"
@@ -324,7 +394,7 @@ export default function Customers() {
                   placeholder="Nama customer"
                   value={formData.nama}
                   onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:border-[#1a2f4f] outline-none text-sm"
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:border-[#10b981] focus:ring-2 focus:ring-[#10b981]/10 outline-none text-sm"
                 />
               </div>
               <div>
@@ -335,11 +405,11 @@ export default function Customers() {
                   placeholder="email@example.com"
                   value={formData.email}
                   onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:border-[#1a2f4f] outline-none text-sm"
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:border-[#10b981] focus:ring-2 focus:ring-[#10b981]/10 outline-none text-sm"
                 />
               </div>
               <div>
-                <label className="block text-xs font-semibold text-gray-600 mb-1">No. HP *</label>
+                <label className="block text-xs font-semibold text-gray-600 mb-1">No. HP <span className="text-red-500">*</span></label>
                 <input
                   type="text"
                   name="no_hp"
@@ -347,7 +417,7 @@ export default function Customers() {
                   placeholder="081234567890"
                   value={formData.no_hp}
                   onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:border-[#1a2f4f] outline-none text-sm font-mono"
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:border-[#10b981] focus:ring-2 focus:ring-[#10b981]/10 outline-none text-sm font-mono"
                 />
               </div>
               <div>
@@ -358,7 +428,7 @@ export default function Customers() {
                   placeholder="Nomor KTP"
                   value={formData.nik}
                   onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:border-[#1a2f4f] outline-none text-sm font-mono"
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:border-[#10b981] focus:ring-2 focus:ring-[#10b981]/10 outline-none text-sm font-mono"
                 />
               </div>
               <div>
@@ -369,7 +439,7 @@ export default function Customers() {
                   placeholder="Alamat lengkap customer"
                   value={formData.alamat}
                   onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:border-[#1a2f4f] outline-none text-sm"
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:border-[#10b981] focus:ring-2 focus:ring-[#10b981]/10 outline-none text-sm"
                 />
               </div>
 
@@ -377,15 +447,16 @@ export default function Customers() {
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2 border border-gray-200 rounded-xl hover:bg-gray-50 text-gray-600 text-sm font-semibold"
+                  className="px-4 py-2 border border-gray-200 rounded-xl hover:bg-gray-50 text-gray-600 text-sm font-semibold transition-all"
                 >
                   Batal
                 </button>
                 <button
                   type="submit"
                   disabled={submitLoading}
-                  className="px-5 py-2 bg-[#f97316] hover:bg-orange-600 disabled:opacity-50 text-white rounded-xl text-sm font-semibold shadow-lg shadow-orange-500/10"
+                  className="px-5 py-2 bg-[#10b981] hover:bg-emerald-600 disabled:opacity-50 text-white rounded-xl text-sm font-semibold shadow-lg shadow-emerald-500/20 transition-all flex items-center gap-2"
                 >
+                  {submitLoading ? <Loader2 size={16} className="animate-spin" /> : null}
                   {submitLoading ? 'Menyimpan...' : 'Simpan'}
                 </button>
               </div>
@@ -405,19 +476,23 @@ export default function Customers() {
             <p className="text-gray-500 text-xs mt-2 leading-relaxed">
               Apakah Anda yakin ingin menghapus customer <span className="font-semibold text-gray-700">{selectedCustomer.nama}</span>?
             </p>
+            <p className="text-gray-400 text-[10px] mt-1">
+              Data terkait seperti transaksi dan booking akan tetap tersimpan.
+            </p>
             <div className="flex gap-3 mt-6">
               <button
                 onClick={() => setIsDeleteOpen(false)}
                 disabled={submitLoading}
-                className="flex-1 px-4 py-2 border border-gray-200 hover:bg-gray-50 text-gray-600 rounded-xl text-xs font-semibold"
+                className="flex-1 px-4 py-2 border border-gray-200 hover:bg-gray-50 text-gray-600 rounded-xl text-xs font-semibold transition-all"
               >
                 Batal
               </button>
               <button
                 onClick={handleDelete}
                 disabled={submitLoading}
-                className="flex-1 px-4 py-2 bg-red-500 hover:bg-red-600 disabled:opacity-50 text-white rounded-xl text-xs font-semibold"
+                className="flex-1 px-4 py-2 bg-red-500 hover:bg-red-600 disabled:opacity-50 text-white rounded-xl text-xs font-semibold transition-all flex items-center justify-center gap-2"
               >
+                {submitLoading ? <Loader2 size={14} className="animate-spin" /> : null}
                 {submitLoading ? 'Menghapus...' : 'Hapus'}
               </button>
             </div>

@@ -13,8 +13,8 @@ export default function AdminLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const { user, logout } = useAuthStore()
   const navigate = useNavigate()
-  console.log('DEBUG user:', user)  // tambahkan baris ini
-  console.log('DEBUG roles:', user?.roles)  // dan ini
+  console.log('DEBUG user:', user)
+  console.log('DEBUG roles:', user?.roles)
 
   const handleLogout = async () => {
     try {
@@ -63,7 +63,7 @@ export default function AdminLayout() {
       {/* Sidebar */}
       <aside className={`
         ${sidebarOpen ? 'w-64' : 'w-0 overflow-hidden'}
-        bg-[#1e3a5f] text-white flex flex-col
+        bg-[#1a2f4f] text-white flex flex-col
         transition-all duration-300 ease-in-out flex-shrink-0
       `}>
         <div className="p-6 border-b border-white/10">
@@ -80,7 +80,7 @@ export default function AdminLayout() {
                 flex items-center gap-3 px-4 py-3 rounded-lg text-sm
                 transition-colors duration-150
                 ${isActive
-                  ? 'bg-[#f97316] text-white font-medium'
+                  ? 'bg-[#10b981] text-white font-medium shadow-lg shadow-emerald-500/20'
                   : 'text-white/70 hover:bg-white/10 hover:text-white'
                 }
               `}
@@ -115,10 +115,10 @@ export default function AdminLayout() {
             {sidebarOpen ? <X size={20} /> : <Menu size={20} />}
           </button>
           <h2 className="text-sm font-medium text-gray-600">
-            Selamat datang, <span className="text-[#1e3a5f] font-semibold">{user?.name}</span>
+            Selamat datang, <span className="text-[#1a2f4f] font-semibold">{user?.name}</span>
           </h2>
           <div className="ml-auto flex items-center gap-2">
-            <span className="text-xs bg-[#1e3a5f]/10 text-[#1e3a5f] px-2.5 py-1 rounded-full capitalize font-medium">
+            <span className="text-xs bg-[#10b981]/10 text-[#10b981] px-2.5 py-1 rounded-full capitalize font-medium">
               {userRole || 'User'}
             </span>
           </div>

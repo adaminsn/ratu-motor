@@ -129,14 +129,6 @@ export default function Login() {
     { icon: BarChart3, label: 'Laporan Lengkap', desc: 'PDF & Excel' },
   ];
 
-  const userList = [
-    { name: 'Dwi Purnomo', email: 'dwi@ratumotor.test', role: 'Super Admin' },
-    { name: 'Afrisal', email: 'afrisal@ratumotor.test', role: 'Admin' },
-    { name: 'Durrahman', email: 'durrahman@ratumotor.test', role: 'Teknisi' },
-    { name: 'Iyut', email: 'iyut@ratumotor.test', role: 'Kasir' },
-    { name: 'Test Customer', email: 'customer@test.com', role: 'Customer' },
-  ];
-
   return (
     <div className="min-h-screen flex bg-gray-50 relative overflow-hidden">
 
@@ -237,32 +229,9 @@ export default function Login() {
               </motion.div>
             ))}
           </div>
-
-          {/* Akun Demo */}
-          <div className="mt-8 p-4 bg-white/5 rounded-xl border border-white/10">
-            <p className="text-white/40 text-xs uppercase tracking-wider mb-3">👥 Akun Demo</p>
-            <div className="space-y-1.5">
-              {userList.map((u) => (
-                <div key={u.email} className="flex items-center justify-between text-xs">
-                  <span className="text-white/60">{u.name}</span>
-                  <span className={`px-2 py-0.5 rounded-full text-[9px] font-medium ${
-                    u.role === 'Super Admin' ? 'bg-red-500/20 text-red-400' :
-                    u.role === 'Admin' ? 'bg-blue-500/20 text-blue-400' :
-                    u.role === 'Kasir' ? 'bg-yellow-500/20 text-yellow-400' :
-                    u.role === 'Teknisi' ? 'bg-purple-500/20 text-purple-400' :
-                    'bg-emerald-500/20 text-emerald-400'
-                  }`}>
-                    {u.role}
-                  </span>
-                </div>
-              ))}
-            </div>
-            <p className="text-white/30 text-[8px] mt-2 text-center">
-              Semua password: <span className="font-mono">password</span>
-            </p>
-          </div>
         </div>
 
+        {/* Footer - Tanpa Akun Demo */}
         <div className="relative z-10 flex items-center justify-between text-white/20 text-xs border-t border-white/5 pt-6">
           <span>© 2026 Ratu Motor Banyuwangi</span>
           <div className="flex items-center gap-4">

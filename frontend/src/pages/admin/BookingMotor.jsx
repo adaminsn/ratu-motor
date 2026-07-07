@@ -1,10 +1,9 @@
 // src/pages/admin/BookingMotor.jsx
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { 
   Calendar, Search, Filter, ChevronLeft, ChevronRight,
-  Eye, Check, X, CheckCircle, XCircle,
-  Plus, Phone, User, Clock
+  Eye, X, Plus, Phone, User, Clock, RefreshCw, Loader2, Bell
 } from 'lucide-react'
 import api from '../../api/axios'
 import toast from 'react-hot-toast'
@@ -23,21 +22,67 @@ const STATUS_BADGES = {
   menunggu: 'bg-yellow-100 text-yellow-700 border-yellow-200',
   dikonfirmasi: 'bg-blue-100 text-blue-700 border-blue-200',
   selesai: 'bg-emerald-100 text-emerald-700 border-emerald-200',
-  dibatalkan: 'bg-red-100 text-red-700 border-red-200'
+  dibatal: 'bg-red-100 text-red-700 border-red-200'
 }
 
 const STATUS_LABELS = {
   menunggu: 'Menunggu',
   dikonfirmasi: 'Dikonfirmasi',
   selesai: 'Selesai',
-  dibatalkan: 'Dibatalkan'
+  dibatal: 'Dibatalkan'
 }
+
+// ===== SKELETON COMPONENTS =====
+
+// Skeleton untuk Header
+const SkeletonHeader = () => (
+  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 animate-pulse">
+    <div>
+      <div className="h-8 w-40 bg-gray-200 rounded-lg" />
+      <div className="h-4 w-56 bg-gray-200 rounded-lg mt-1" />
+    </div>
+    <div className="h-10 w-36 bg-gray-200 rounded-xl" />
+  </div>
+)
+
+// Skeleton untuk Filters
+const SkeletonFilters = () => (
+  <div className="bg-white rounded-xl shadow-sm p-4 flex flex-col sm:flex-row sm:items-center gap-4 animate-pulse">
+    <div className="flex-1 h-11 bg-gray-200 rounded-xl" />
+    <div className="flex items-center gap-2">
+      <div className="h-11 w-32 bg-gray-200 rounded-xl" />
+    </div>
+  </div>
+)
+
+// Skeleton untuk Table
+const SkeletonTable = () => (
+  <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100 animate-pulse">
+    <div className="p-4 border-b border-gray-100">
+      <div className="h-5 w-32 bg-gray-200 rounded" />
+    </div>
+    {[1, 2, 3, 4, 5].map((i) => (
+      <div key={i} className="p-4 border-b border-gray-100 flex items-center gap-4">
+        <div className="w-10 h-10 bg-gray-200 rounded-lg" />
+        <div className="flex-1">
+          <div className="h-4 w-32 bg-gray-200 rounded" />
+          <div className="h-3 w-24 bg-gray-200 rounded mt-1" />
+        </div>
+        <div className="h-5 w-16 bg-gray-200 rounded-full" />
+        <div className="flex gap-2">
+          <div className="h-8 w-20 bg-gray-200 rounded-lg" />
+          <div className="h-8 w-20 bg-gray-200 rounded-lg" />
+        </div>
+      </div>
+    ))}
+  </div>
+)
 
 export default function BookingMotor() {
   const navigate = useNavigate()
   const [bookings, setBookings] = useState([])
   const [loading, setLoading] = useState(true)
-  const [submitLoading, setSubmitLoading] = useState(false)
+  const [refreshing, setRefreshing] = useState(false)
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
@@ -45,85 +90,200 @@ export default function BookingMotor() {
   const [total, setTotal] = useState(0)
   const [isDetailOpen, setIsDetailOpen] = useState(false)
   const [selectedBooking, setSelectedBooking] = useState(null)
+  const [actionLoading, setActionLoading] = useState(null)
+  const [lastUpdate, setLastUpdate] = useState(Date.now())
+  const [hasNewChanges, setHasNewChanges] = useState(false)
+  const previousBookingsRef = useRef([])
 
-  const fetchBookings = async () => {
-    setLoading(true)
+  // ===== FETCH BOOKINGS =====
+  const fetchBookings = useCallback(async (showLoading = true, silent = false) => {
+    if (showLoading) {
+      setLoading(true)
+    } else if (!silent) {
+      setRefreshing(true)
+    }
+    
     try {
       const response = await api.get('/admin/bookings', {
         params: {
-          search: search,
-          status: statusFilter,
+          search: search || undefined,
+          status: statusFilter || undefined,
           page: currentPage,
-          per_page: 10
+          per_page: 10,
+          _t: Date.now()
         }
       })
-      setBookings(response.data?.data || [])
-      setCurrentPage(response.data?.current_page || 1)
-      setLastPage(response.data?.last_page || 1)
-      setTotal(response.data?.total || 0)
+      
+      const data = response.data
+      const newBookings = data?.data || []
+      
+      // Cek perubahan status
+      if (previousBookingsRef.current.length > 0) {
+        const changes = newBookings.filter((newB) => {
+          const oldB = previousBookingsRef.current.find(b => b.id === newB.id)
+          return oldB && oldB.status !== newB.status
+        })
+        
+        if (changes.length > 0) {
+          setHasNewChanges(true)
+          console.log('🔄 Ada perubahan status:', changes)
+          
+          changes.forEach(change => {
+            const motorName = change.motor?.merk + ' ' + change.motor?.tipe || 'Motor'
+            const oldStatus = previousBookingsRef.current.find(b => b.id === change.id)?.status
+            toast.info(`📢 ${motorName}: ${STATUS_LABELS[oldStatus] || oldStatus} → ${STATUS_LABELS[change.status] || change.status}`, {
+              duration: 4000
+            })
+          })
+          setTimeout(() => setHasNewChanges(false), 5000)
+        }
+      }
+      
+      previousBookingsRef.current = newBookings
+      
+      setBookings(newBookings)
+      setCurrentPage(data?.current_page || 1)
+      setLastPage(data?.last_page || 1)
+      setTotal(data?.total || 0)
+      setLastUpdate(Date.now())
+      
     } catch (err) {
       console.error('Error fetching bookings:', err)
-      toast.error('Gagal memuat data booking')
+      if (!silent) {
+        toast.error('Gagal memuat data booking')
+      }
     } finally {
       setLoading(false)
+      setRefreshing(false)
     }
-  }
-
-  useEffect(() => {
-    fetchBookings()
   }, [search, statusFilter, currentPage])
 
+  // ===== INITIAL FETCH =====
+  useEffect(() => {
+    fetchBookings(true)
+  }, [])
+
+  // ===== FETCH ON FILTER CHANGE =====
+  useEffect(() => {
+    if (!loading) {
+      fetchBookings(true)
+    }
+  }, [search, statusFilter, currentPage])
+
+  // ===== POLLING SETIAP 5 DETIK =====
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (!loading && !refreshing) {
+        fetchBookings(false, true)
+      }
+    }, 5000)
+    
+    return () => clearInterval(interval)
+  }, [loading, refreshing])
+
+  // ===== REFRESH MANUAL =====
+  const refreshData = () => {
+    fetchBookings(false)
+    toast.success('Data berhasil di-refresh')
+  }
+
+  // ===== HANDLE CONFIRM =====
   const handleConfirm = async (bookingId) => {
-    setSubmitLoading(true)
+    if (actionLoading) return
+    
+    setActionLoading(bookingId)
     try {
       await api.patch(`/admin/bookings/${bookingId}/confirm`)
-      toast.success('Booking berhasil dikonfirmasi')
-      fetchBookings()
+      
+      // Update UI langsung
+      setBookings(prev => prev.map(b => 
+        b.id === bookingId ? { ...b, status: 'dikonfirmasi' } : b
+      ))
+      if (selectedBooking && selectedBooking.id === bookingId) {
+        setSelectedBooking({ ...selectedBooking, status: 'dikonfirmasi' })
+      }
+      
+      toast.success('✅ Booking berhasil dikonfirmasi')
+      await fetchBookings(false, true)
+      
     } catch (err) {
       console.error('Error confirming booking:', err)
       toast.error(err.response?.data?.message || 'Gagal mengonfirmasi booking')
+      await fetchBookings(false, true)
     } finally {
-      setSubmitLoading(false)
+      setActionLoading(null)
     }
   }
 
+  // ===== HANDLE COMPLETE =====
   const handleComplete = async (bookingId) => {
-    setSubmitLoading(true)
+    if (actionLoading) return
+    
+    setActionLoading(bookingId)
     try {
       await api.patch(`/admin/bookings/${bookingId}/complete`)
-      toast.success('Booking ditandai selesai')
-      fetchBookings()
+      
+      setBookings(prev => prev.map(b => 
+        b.id === bookingId ? { ...b, status: 'selesai' } : b
+      ))
+      if (selectedBooking && selectedBooking.id === bookingId) {
+        setSelectedBooking({ ...selectedBooking, status: 'selesai' })
+      }
+      
+      toast.success('✅ Booking ditandai selesai')
+      await fetchBookings(false, true)
+      
     } catch (err) {
       console.error('Error completing booking:', err)
       toast.error(err.response?.data?.message || 'Gagal menyelesaikan booking')
+      await fetchBookings(false, true)
     } finally {
-      setSubmitLoading(false)
+      setActionLoading(null)
     }
   }
 
+  // ===== HANDLE CANCEL =====
   const handleCancel = async (bookingId) => {
-    setSubmitLoading(true)
+    if (actionLoading) return
+    
+    if (!confirm('Yakin ingin membatalkan booking ini?')) return
+    
+    setActionLoading(bookingId)
     try {
       await api.patch(`/admin/bookings/${bookingId}/cancel`)
-      toast.success('Booking berhasil dibatalkan')
-      fetchBookings()
+      
+      setBookings(prev => prev.map(b => 
+        b.id === bookingId ? { ...b, status: 'dibatal' } : b
+      ))
+      if (selectedBooking && selectedBooking.id === bookingId) {
+        setSelectedBooking({ ...selectedBooking, status: 'dibatal' })
+      }
+      
+      toast.success('✅ Booking berhasil dibatalkan')
+      await fetchBookings(false, true)
+      
     } catch (err) {
       console.error('Error cancelling booking:', err)
       toast.error(err.response?.data?.message || 'Gagal membatalkan booking')
+      await fetchBookings(false, true)
     } finally {
-      setSubmitLoading(false)
+      setActionLoading(null)
     }
   }
 
+  // ===== OPEN DETAIL =====
   const openDetail = (booking) => {
     setSelectedBooking(booking)
     setIsDetailOpen(true)
   }
 
+  // ===== RENDER SKELETON SAAT LOADING =====
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="w-10 h-10 border-4 border-[#1a2f4f] border-t-[#f97316] rounded-full animate-spin" />
+      <div className="space-y-4 md:space-y-6 pb-8">
+        <SkeletonHeader />
+        <SkeletonFilters />
+        <SkeletonTable />
       </div>
     )
   }
@@ -135,20 +295,32 @@ export default function BookingMotor() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-[#1a2f4f] flex items-center gap-2">
-            <Calendar size={24} className="text-[#f97316]" />
+            <Calendar size={24} className="text-[#10b981]" />
             Booking Motor
           </h1>
-          <p className="text-sm text-gray-500 mt-1">
+          <p className="text-sm text-gray-500 flex items-center gap-2">
             Kelola booking pembelian motor dari customer
+            {hasNewChanges && (
+              <span className="inline-flex items-center gap-1 text-xs text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full animate-pulse">
+                <Bell size={12} />
+                Ada perubahan
+              </span>
+            )}
           </p>
         </div>
-        <button
-          onClick={() => navigate('/admin/bookings/create')}
-          className="flex items-center gap-2 bg-[#f97316] hover:bg-orange-600 text-white font-semibold px-4 py-2.5 rounded-xl shadow-lg shadow-orange-500/10 transition-all"
-        >
-          <Plus size={18} />
-          <span>Booking Baru</span>
-        </button>
+        <div className="flex items-center gap-2">
+          <div className="text-xs text-gray-400 hidden sm:block">
+            Update: {new Date(lastUpdate).toLocaleTimeString('id-ID')}
+          </div>
+          <button
+            onClick={refreshData}
+            disabled={refreshing}
+            className="flex items-center gap-2 bg-[#10b981] hover:bg-emerald-600 text-white font-semibold px-4 py-2.5 rounded-xl shadow-lg shadow-emerald-500/20 transition-all disabled:opacity-50"
+          >
+            <RefreshCw size={18} className={refreshing ? 'animate-spin' : ''} />
+            <span>Refresh</span>
+          </button>
+        </div>
       </div>
 
       {/* Filters */}
@@ -160,7 +332,7 @@ export default function BookingMotor() {
             placeholder="Cari nama customer atau motor..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-11 pr-4 py-2.5 border border-gray-200 rounded-xl focus:border-[#1a2f4f] outline-none text-sm"
+            className="w-full pl-11 pr-4 py-2.5 border border-gray-200 rounded-xl focus:border-[#10b981] focus:ring-2 focus:ring-[#10b981]/10 outline-none text-sm"
           />
         </div>
         <div className="flex items-center gap-2">
@@ -168,13 +340,13 @@ export default function BookingMotor() {
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="border border-gray-200 rounded-xl px-4 py-2.5 outline-none text-sm bg-white focus:border-[#1a2f4f]"
+            className="border border-gray-200 rounded-xl px-4 py-2.5 outline-none text-sm bg-white focus:border-[#10b981]"
           >
             <option value="">Semua Status</option>
             <option value="menunggu">🟡 Menunggu</option>
             <option value="dikonfirmasi">🔵 Dikonfirmasi</option>
             <option value="selesai">🟢 Selesai</option>
-            <option value="dibatalkan">🔴 Dibatalkan</option>
+            <option value="dibatal">🔴 Dibatalkan</option>
           </select>
         </div>
         {statusFilter && (
@@ -200,6 +372,7 @@ export default function BookingMotor() {
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="bg-gray-50 border-b border-gray-100 text-xs text-gray-400 uppercase tracking-wider">
+                  <th className="px-6 py-4 font-semibold">#</th>
                   <th className="px-6 py-4 font-semibold">Customer</th>
                   <th className="px-6 py-4 font-semibold">Motor</th>
                   <th className="px-6 py-4 font-semibold">Tanggal</th>
@@ -209,17 +382,23 @@ export default function BookingMotor() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
-                {bookings.map((booking) => {
-                  // Pastikan data ada
+                {bookings.map((booking, index) => {
                   const namaPembeli = booking.nama_pembeli || booking.customer?.nama || 'Belum diisi'
                   const noHp = booking.no_hp || booking.customer?.no_hp || '-'
                   const tanggalBooking = booking.tanggal_booking || booking.created_at
                   const jenisBayar = booking.jenis_bayar || '-'
                   const status = booking.status || 'menunggu'
                   const motor = booking.motor || {}
+                  const isLoading = actionLoading === booking.id
 
                   return (
-                    <tr key={booking.id} className="hover:bg-gray-50/50 transition-colors">
+                    <tr 
+                      key={booking.id} 
+                      className={`hover:bg-gray-50/50 transition-colors ${status === 'dibatal' ? 'bg-red-50/30' : ''}`}
+                    >
+                      <td className="px-6 py-4 text-xs text-gray-400">
+                        {((currentPage - 1) * 10) + index + 1}
+                      </td>
                       <td className="px-6 py-4">
                         <div className="font-semibold text-gray-800">
                           {namaPembeli}
@@ -240,7 +419,7 @@ export default function BookingMotor() {
                         {formatDate(tanggalBooking)}
                       </td>
                       <td className="px-6 py-4">
-                        <span className="text-xs px-2 py-1 rounded-full bg-blue-50 text-blue-700">
+                        <span className="text-xs px-2 py-1 rounded-full bg-blue-50 text-blue-700 capitalize">
                           {jenisBayar}
                         </span>
                       </td>
@@ -248,44 +427,61 @@ export default function BookingMotor() {
                         <span className={`inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full font-medium border ${STATUS_BADGES[status] || STATUS_BADGES.menunggu}`}>
                           {STATUS_LABELS[status] || 'Menunggu'}
                         </span>
+                        {status === 'dibatal' && (
+                          <span className="ml-1 text-xs text-red-400">(dibatalkan)</span>
+                        )}
                       </td>
                       <td className="px-6 py-4 text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          {booking.status === 'menunggu' && (
+                        <div className="flex items-center justify-end gap-2 flex-wrap">
+                          {status === 'menunggu' && (
                             <>
                               <button
                                 onClick={() => handleConfirm(booking.id)}
-                                className="px-3 py-1.5 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-xs font-semibold"
+                                disabled={isLoading}
+                                className="px-3 py-1.5 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-xs font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-1"
                               >
-                                Konfirmasi
+                                {isLoading ? <Loader2 size={12} className="animate-spin" /> : null}
+                                {isLoading ? '...' : 'Konfirmasi'}
                               </button>
                               <button
                                 onClick={() => handleCancel(booking.id)}
-                                className="px-3 py-1.5 bg-red-500 hover:bg-red-600 text-white rounded-lg text-xs font-semibold"
+                                disabled={isLoading}
+                                className="px-3 py-1.5 bg-red-500 hover:bg-red-600 text-white rounded-lg text-xs font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-1"
                               >
-                                Batalkan
+                                {isLoading ? <Loader2 size={12} className="animate-spin" /> : null}
+                                {isLoading ? '...' : 'Batalkan'}
                               </button>
                             </>
                           )}
-                          {booking.status === 'dikonfirmasi' && (
+                          {status === 'dikonfirmasi' && (
                             <>
                               <button
                                 onClick={() => handleComplete(booking.id)}
-                                className="px-3 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg text-xs font-semibold"
+                                disabled={isLoading}
+                                className="px-3 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg text-xs font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-1"
                               >
-                                Tandai Selesai
+                                {isLoading ? <Loader2 size={12} className="animate-spin" /> : null}
+                                {isLoading ? '...' : 'Selesai'}
                               </button>
                               <button
                                 onClick={() => handleCancel(booking.id)}
-                                className="px-3 py-1.5 bg-red-500 hover:bg-red-600 text-white rounded-lg text-xs font-semibold"
+                                disabled={isLoading}
+                                className="px-3 py-1.5 bg-red-500 hover:bg-red-600 text-white rounded-lg text-xs font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-1"
                               >
-                                Batalkan
+                                {isLoading ? <Loader2 size={12} className="animate-spin" /> : null}
+                                {isLoading ? '...' : 'Batalkan'}
                               </button>
                             </>
                           )}
+                          {status === 'selesai' && (
+                            <span className="text-xs text-emerald-600 font-medium">✔ Selesai</span>
+                          )}
+                          {status === 'dibatal' && (
+                            <span className="text-xs text-red-500 font-medium">✖ Dibatalkan</span>
+                          )}
                           <button
                             onClick={() => openDetail(booking)}
-                            className="p-1.5 text-gray-400 hover:text-[#1a2f4f] rounded-lg hover:bg-gray-100 transition-colors"
+                            className="p-1.5 text-gray-400 hover:text-[#10b981] rounded-lg hover:bg-gray-100 transition-colors"
                             title="Detail Booking"
                           >
                             <Eye size={16} />
@@ -334,7 +530,7 @@ export default function BookingMotor() {
 
             <div className="bg-[#1a2f4f] text-white px-6 py-4 flex items-center justify-between">
               <h2 className="text-lg font-bold flex items-center gap-2">
-                <Calendar size={20} className="text-[#f97316]" />
+                <Calendar size={20} className="text-[#10b981]" />
                 <span>Detail Booking</span>
               </h2>
               <button onClick={() => setIsDetailOpen(false)} className="text-white/60 hover:text-white">
@@ -405,7 +601,7 @@ export default function BookingMotor() {
                 </div>
               </div>
 
-              <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
+              <div className="flex justify-end gap-3 pt-4 border-t border-gray-100 flex-wrap">
                 {selectedBooking.status === 'menunggu' && (
                   <>
                     <button
@@ -413,18 +609,22 @@ export default function BookingMotor() {
                         handleConfirm(selectedBooking.id)
                         setIsDetailOpen(false)
                       }}
-                      className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-xl text-xs font-semibold"
+                      disabled={actionLoading === selectedBooking.id}
+                      className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-xl text-xs font-semibold disabled:opacity-50 transition-all flex items-center gap-1"
                     >
-                      Konfirmasi
+                      {actionLoading === selectedBooking.id ? <Loader2 size={14} className="animate-spin" /> : null}
+                      {actionLoading === selectedBooking.id ? '...' : 'Konfirmasi'}
                     </button>
                     <button
                       onClick={() => {
                         handleCancel(selectedBooking.id)
                         setIsDetailOpen(false)
                       }}
-                      className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-xl text-xs font-semibold"
+                      disabled={actionLoading === selectedBooking.id}
+                      className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-xl text-xs font-semibold disabled:opacity-50 transition-all flex items-center gap-1"
                     >
-                      Batalkan
+                      {actionLoading === selectedBooking.id ? <Loader2 size={14} className="animate-spin" /> : null}
+                      {actionLoading === selectedBooking.id ? '...' : 'Batalkan'}
                     </button>
                   </>
                 )}
@@ -435,24 +635,38 @@ export default function BookingMotor() {
                         handleComplete(selectedBooking.id)
                         setIsDetailOpen(false)
                       }}
-                      className="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl text-xs font-semibold"
+                      disabled={actionLoading === selectedBooking.id}
+                      className="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl text-xs font-semibold disabled:opacity-50 transition-all flex items-center gap-1"
                     >
-                      Tandai Selesai
+                      {actionLoading === selectedBooking.id ? <Loader2 size={14} className="animate-spin" /> : null}
+                      {actionLoading === selectedBooking.id ? '...' : 'Selesai'}
                     </button>
                     <button
                       onClick={() => {
                         handleCancel(selectedBooking.id)
                         setIsDetailOpen(false)
                       }}
-                      className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-xl text-xs font-semibold"
+                      disabled={actionLoading === selectedBooking.id}
+                      className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-xl text-xs font-semibold disabled:opacity-50 transition-all flex items-center gap-1"
                     >
-                      Batalkan
+                      {actionLoading === selectedBooking.id ? <Loader2 size={14} className="animate-spin" /> : null}
+                      {actionLoading === selectedBooking.id ? '...' : 'Batalkan'}
                     </button>
                   </>
                 )}
+                {selectedBooking.status === 'selesai' && (
+                  <span className="px-4 py-2 bg-emerald-100 text-emerald-700 rounded-xl text-xs font-semibold">
+                    ✔ Booking Selesai
+                  </span>
+                )}
+                {selectedBooking.status === 'dibatal' && (
+                  <span className="px-4 py-2 bg-red-100 text-red-700 rounded-xl text-xs font-semibold">
+                    ✖ Booking Dibatalkan
+                  </span>
+                )}
                 <button
                   onClick={() => setIsDetailOpen(false)}
-                  className="px-5 py-2 bg-[#1a2f4f] text-white rounded-xl text-xs font-semibold hover:bg-[#12223a]"
+                  className="px-5 py-2 bg-[#1a2f4f] text-white rounded-xl text-xs font-semibold hover:bg-[#12223a] transition-all"
                 >
                   Tutup
                 </button>

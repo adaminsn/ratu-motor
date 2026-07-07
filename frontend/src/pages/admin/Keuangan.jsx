@@ -6,7 +6,7 @@ import {
   AlertCircle, Info, Receipt, Search,
   ChevronLeft, ChevronRight, Filter,
   Sparkles, Zap, Coins, Wallet, PiggyBank,
-  Trash2, ShieldAlert
+  Trash2, ShieldAlert, Loader2
 } from 'lucide-react'
 import api from '../../api/axios'
 import toast from 'react-hot-toast'
@@ -37,6 +37,80 @@ const kategoriLabels = {
   marketing: 'Marketing / Promosi',
   lainnya: 'Lainnya'
 }
+
+// ===== SKELETON COMPONENTS =====
+
+// Skeleton untuk Header
+const SkeletonHeader = () => (
+  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 animate-pulse">
+    <div>
+      <div className="h-8 w-48 bg-gray-200 rounded-lg" />
+      <div className="h-4 w-64 bg-gray-200 rounded-lg mt-1" />
+    </div>
+    <div className="flex gap-2">
+      <div className="h-10 w-28 bg-gray-200 rounded-xl" />
+      <div className="h-10 w-28 bg-gray-200 rounded-xl" />
+      <div className="h-10 w-36 bg-gray-200 rounded-xl" />
+    </div>
+  </div>
+)
+
+// Skeleton untuk Filter
+const SkeletonFilter = () => (
+  <div className="bg-white rounded-xl shadow-sm p-4 flex flex-col sm:flex-row sm:items-center gap-4 animate-pulse">
+    <div className="h-5 w-20 bg-gray-200 rounded" />
+    <div className="flex gap-3">
+      <div className="h-10 w-36 bg-gray-200 rounded-lg" />
+      <div className="h-10 w-10 bg-gray-200 rounded-lg" />
+      <div className="h-10 w-36 bg-gray-200 rounded-lg" />
+    </div>
+    <div className="flex ml-auto gap-2">
+      <div className="h-10 w-20 bg-gray-200 rounded-xl" />
+      <div className="h-10 w-24 bg-gray-200 rounded-xl" />
+    </div>
+  </div>
+)
+
+// Skeleton untuk Summary Cards
+const SkeletonSummary = () => (
+  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 animate-pulse">
+    {[1, 2, 3].map((i) => (
+      <div key={i} className="bg-white rounded-xl shadow-sm p-5 border border-gray-100">
+        <div className="flex items-center gap-3">
+          <div className="w-12 h-12 bg-gray-200 rounded-lg" />
+          <div>
+            <div className="h-3 w-24 bg-gray-200 rounded" />
+            <div className="h-6 w-32 bg-gray-200 rounded mt-1" />
+          </div>
+        </div>
+      </div>
+    ))}
+  </div>
+)
+
+// Skeleton untuk Table
+const SkeletonTable = () => (
+  <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100 animate-pulse">
+    <div className="p-4 border-b border-gray-100 flex justify-between">
+      <div className="h-5 w-32 bg-gray-200 rounded" />
+      <div className="flex gap-3">
+        <div className="h-8 w-40 bg-gray-200 rounded-lg" />
+        <div className="h-8 w-32 bg-gray-200 rounded-lg" />
+      </div>
+    </div>
+    <div className="p-4">
+      {[1, 2, 3, 4].map((i) => (
+        <div key={i} className="flex items-center gap-4 py-3 border-b border-gray-100">
+          <div className="h-4 w-24 bg-gray-200 rounded" />
+          <div className="flex-1 h-4 w-32 bg-gray-200 rounded" />
+          <div className="h-4 w-20 bg-gray-200 rounded" />
+          <div className="h-4 w-28 bg-gray-200 rounded" />
+          <div className="h-6 w-24 bg-gray-200 rounded-full" />
+        </div>
+      ))}
+    </div>
+  </div>
+)
 
 export default function Keuangan() {
   const [loading, setLoading] = useState(true)
@@ -328,8 +402,20 @@ export default function Keuangan() {
   const summaryCards = [
     { label: 'Total Pemasukan', value: formatRupiah(data?.total_pemasukan || 0), icon: TrendingUp, color: 'text-emerald-500', bg: 'bg-emerald-50' },
     { label: 'Total Pengeluaran', value: formatRupiah(data?.total_pengeluaran || 0), icon: TrendingDown, color: 'text-red-500', bg: 'bg-red-50' },
-    { label: 'Keuntungan Kotor', value: formatRupiah(data?.keuntungan_kotor || 0), icon: DollarSign, color: 'text-[#f97316]', bg: 'bg-orange-50' },
+    { label: 'Keuntungan Kotor', value: formatRupiah(data?.keuntungan_kotor || 0), icon: DollarSign, color: 'text-[#10b981]', bg: 'bg-emerald-50' },
   ]
+
+  // ===== RENDER SKELETON SAAT LOADING =====
+  if (loading) {
+    return (
+      <div className="space-y-4 md:space-y-6 pb-8">
+        <SkeletonHeader />
+        <SkeletonFilter />
+        <SkeletonSummary />
+        <SkeletonTable />
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-4 md:space-y-6 pb-8">
@@ -338,17 +424,17 @@ export default function Keuangan() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="relative">
           <div className="flex items-center gap-2">
-            <Sparkles size={20} className="text-[#f97316] animate-pulse" />
+            <Sparkles size={20} className="text-[#10b981] animate-pulse" />
             <h1 className="text-2xl font-bold text-[#1a2f4f]">Keuangan & Laporan</h1>
           </div>
           <p className="text-sm text-gray-500 mt-1 flex items-center gap-1">
-            <Wallet size={14} /> Kelola pemasukan, pengeluaran, dan laporan laba rugi
+            <Wallet size={14} className="text-[#10b981]" /> Kelola pemasukan, pengeluaran, dan laporan laba rugi
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
           <button
             onClick={() => setIsPemasukanOpen(true)}
-            className="flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white font-semibold px-4 py-2.5 rounded-xl shadow-lg shadow-emerald-500/20 active:scale-[0.98] transition-all duration-200 text-sm"
+            className="flex items-center gap-2 bg-[#10b981] hover:bg-emerald-600 text-white font-semibold px-4 py-2.5 rounded-xl shadow-lg shadow-emerald-500/20 active:scale-[0.98] transition-all duration-200 text-sm"
           >
             <Plus size={18} />
             <span>Pemasukan</span>
@@ -377,7 +463,7 @@ export default function Keuangan() {
       {/* PERIODE FILTER */}
       <div className="bg-white rounded-xl shadow-sm p-4 flex flex-col sm:flex-row sm:items-center gap-4 border border-gray-100">
         <div className="flex items-center gap-2">
-          <Calendar size={18} className="text-gray-400" />
+          <Calendar size={18} className="text-[#10b981]" />
           <span className="text-sm font-medium text-gray-600">Periode:</span>
         </div>
         <div className="flex flex-wrap items-center gap-3">
@@ -385,14 +471,14 @@ export default function Keuangan() {
             type="date"
             value={startDate}
             onChange={(e) => setStartDate(e.target.value)}
-            className="border border-gray-200 rounded-lg px-3 py-2 outline-none text-sm focus:border-[#1a2f4f] focus:ring-2 focus:ring-[#1a2f4f]/10 transition-all"
+            className="border border-gray-200 rounded-lg px-3 py-2 outline-none text-sm focus:border-[#10b981] focus:ring-2 focus:ring-[#10b981]/10 transition-all"
           />
           <span className="text-gray-400">s/d</span>
           <input
             type="date"
             value={endDate}
             onChange={(e) => setEndDate(e.target.value)}
-            className="border border-gray-200 rounded-lg px-3 py-2 outline-none text-sm focus:border-[#1a2f4f] focus:ring-2 focus:ring-[#1a2f4f]/10 transition-all"
+            className="border border-gray-200 rounded-lg px-3 py-2 outline-none text-sm focus:border-[#10b981] focus:ring-2 focus:ring-[#10b981]/10 transition-all"
           />
           <button
             onClick={() => { setStartDate(''); setEndDate('') }}
@@ -411,7 +497,7 @@ export default function Keuangan() {
           </button>
           <button
             onClick={handleExportExcel}
-            className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-xl text-xs font-semibold hover:bg-emerald-700 transition-all duration-200 active:scale-[0.95]"
+            className="flex items-center gap-2 px-4 py-2 bg-[#10b981] text-white rounded-xl text-xs font-semibold hover:bg-emerald-700 transition-all duration-200 active:scale-[0.95]"
           >
             <FileSpreadsheet size={16} />
             Excel
@@ -455,13 +541,13 @@ export default function Keuangan() {
                   placeholder="Cari keterangan..."
                   value={historySearch}
                   onChange={(e) => { setHistorySearch(e.target.value); setHistoryPage(1) }}
-                  className="pl-8 pr-3 py-1.5 border border-gray-200 rounded-lg text-xs outline-none focus:border-[#1a2f4f] focus:ring-2 focus:ring-[#1a2f4f]/10 w-40 transition-all"
+                  className="pl-8 pr-3 py-1.5 border border-gray-200 rounded-lg text-xs outline-none focus:border-[#10b981] focus:ring-2 focus:ring-[#10b981]/10 w-40 transition-all"
                 />
               </div>
               <select
                 value={historyType}
                 onChange={(e) => { setHistoryType(e.target.value); setHistoryPage(1) }}
-                className="border border-gray-200 rounded-lg px-2 py-1.5 text-xs outline-none focus:border-[#1a2f4f] bg-white"
+                className="border border-gray-200 rounded-lg px-2 py-1.5 text-xs outline-none focus:border-[#10b981] bg-white"
               >
                 <option value="semua">📊 Semua</option>
                 <option value="pemasukan">📈 Pemasukan</option>
@@ -479,7 +565,7 @@ export default function Keuangan() {
 
           {historyLoading ? (
             <div className="flex items-center justify-center py-10">
-              <div className="w-8 h-8 border-4 border-[#1a2f4f] border-t-[#f97316] rounded-full animate-spin" />
+              <div className="w-8 h-8 border-4 border-[#1a2f4f] border-t-[#10b981] rounded-full animate-spin" />
             </div>
           ) : combinedHistory.length === 0 ? (
             <div className="py-10 text-center text-gray-400 text-sm">
@@ -537,7 +623,7 @@ export default function Keuangan() {
                         {item.type === 'transaksi_motor' ? (
                           <button
                             onClick={() => { setSelectedMotorTransaksi(item); setIsMotorDetailOpen(true) }}
-                            className="p-1.5 text-gray-400 hover:text-[#1a2f4f] rounded-lg hover:bg-gray-100 transition-colors"
+                            className="p-1.5 text-gray-400 hover:text-[#10b981] rounded-lg hover:bg-gray-100 transition-colors"
                             title="Lihat Detail"
                           >
                             <Info size={16} />
@@ -587,7 +673,7 @@ export default function Keuangan() {
       {/* PENGELUARAN PER KATEGORI */}
       <div className="bg-white rounded-xl shadow-sm p-5 border border-gray-100">
         <h2 className="text-sm font-semibold text-gray-700 mb-4 flex items-center gap-2">
-          <PiggyBank size={16} className="text-[#f97316]" />
+          <PiggyBank size={16} className="text-[#10b981]" />
           Rincian Pengeluaran per Kategori
         </h2>
         {data?.pengeluaran_per_kategori?.length > 0 ? (
@@ -609,7 +695,7 @@ export default function Keuangan() {
       {/* DETAIL LABA RUGI */}
       <div className="bg-white rounded-xl shadow-sm p-5 border border-gray-100">
         <h2 className="text-sm font-semibold text-gray-700 mb-4 flex items-center gap-2">
-          <Coins size={16} className="text-[#f97316]" />
+          <Coins size={16} className="text-[#10b981]" />
           Detail Laba Rugi
         </h2>
         <div className="space-y-2 text-sm">
@@ -629,9 +715,9 @@ export default function Keuangan() {
             <span className="text-gray-500">Total Pengeluaran</span>
             <span className="font-semibold text-red-500">{formatRupiah(data?.total_pengeluaran || 0)}</span>
           </div>
-          <div className="flex justify-between py-3 border-t-2 border-[#1a2f4f] bg-gradient-to-r from-orange-50 to-transparent rounded-lg px-3 -mx-3">
+          <div className="flex justify-between py-3 border-t-2 border-[#1a2f4f] bg-gradient-to-r from-emerald-50 to-transparent rounded-lg px-3 -mx-3">
             <span className="font-bold text-gray-800">KEUNTUNGAN KOTOR</span>
-            <span className="font-bold text-[#f97316] text-lg">{formatRupiah(data?.keuntungan_kotor || 0)}</span>
+            <span className="font-bold text-[#10b981] text-lg">{formatRupiah(data?.keuntungan_kotor || 0)}</span>
           </div>
         </div>
       </div>
@@ -643,7 +729,7 @@ export default function Keuangan() {
             <div className="flex items-center justify-between mb-4">
               <div>
                 <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2">
-                  <Plus size={20} className="text-emerald-500" />
+                  <Plus size={20} className="text-[#10b981]" />
                   Tambah Pemasukan
                 </h2>
                 <p className="text-xs text-gray-400 mt-1">Keterangan wajib diisi untuk dokumentasi</p>
@@ -666,7 +752,7 @@ export default function Keuangan() {
                     if (pemasukanErrors.keterangan) setPemasukanErrors({ ...pemasukanErrors, keterangan: '' })
                   }}
                   placeholder="Contoh: Penjualan aksesoris, servis, dll"
-                  className={`w-full px-3 py-2 border rounded-lg focus:border-[#1a2f4f] outline-none text-sm transition-all ${
+                  className={`w-full px-3 py-2 border rounded-lg focus:border-[#10b981] outline-none text-sm transition-all ${
                     pemasukanErrors.keterangan ? 'border-red-400 ring-2 ring-red-100' : 'border-gray-200'
                   }`}
                 />
@@ -689,7 +775,7 @@ export default function Keuangan() {
                     if (pemasukanErrors.jumlah) setPemasukanErrors({ ...pemasukanErrors, jumlah: '' })
                   }}
                   placeholder="0"
-                  className={`w-full px-3 py-2 border rounded-lg focus:border-[#1a2f4f] outline-none text-sm transition-all ${
+                  className={`w-full px-3 py-2 border rounded-lg focus:border-[#10b981] outline-none text-sm transition-all ${
                     pemasukanErrors.jumlah ? 'border-red-400 ring-2 ring-red-100' : 'border-gray-200'
                   }`}
                 />
@@ -709,7 +795,7 @@ export default function Keuangan() {
                     setPemasukanForm({ ...pemasukanForm, tanggal: e.target.value })
                     if (pemasukanErrors.tanggal) setPemasukanErrors({ ...pemasukanErrors, tanggal: '' })
                   }}
-                  className={`w-full px-3 py-2 border rounded-lg focus:border-[#1a2f4f] outline-none text-sm transition-all ${
+                  className={`w-full px-3 py-2 border rounded-lg focus:border-[#10b981] outline-none text-sm transition-all ${
                     pemasukanErrors.tanggal ? 'border-red-400 ring-2 ring-red-100' : 'border-gray-200'
                   }`}
                 />
@@ -730,8 +816,9 @@ export default function Keuangan() {
                 <button
                   type="submit"
                   disabled={submitLoading}
-                  className="flex-1 px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl text-sm font-semibold disabled:opacity-50 transition-all active:scale-[0.95]"
+                  className="flex-1 px-4 py-2 bg-[#10b981] hover:bg-emerald-600 text-white rounded-xl text-sm font-semibold disabled:opacity-50 transition-all active:scale-[0.95] flex items-center justify-center gap-2"
                 >
+                  {submitLoading ? <Loader2 size={16} className="animate-spin" /> : null}
                   {submitLoading ? 'Menyimpan...' : 'Simpan'}
                 </button>
               </div>
@@ -763,7 +850,7 @@ export default function Keuangan() {
                   required
                   value={pengeluaranForm.kategori}
                   onChange={(e) => setPengeluaranForm({ ...pengeluaranForm, kategori: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:border-[#1a2f4f] outline-none text-sm"
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:border-[#10b981] outline-none text-sm"
                 >
                   <option value="pembelian_motor">Pembelian Motor</option>
                   <option value="operasional">Operasional</option>
@@ -785,7 +872,7 @@ export default function Keuangan() {
                     if (pengeluaranErrors.keterangan) setPengeluaranErrors({ ...pengeluaranErrors, keterangan: '' })
                   }}
                   placeholder="Deskripsi pengeluaran"
-                  className={`w-full px-3 py-2 border rounded-lg focus:border-[#1a2f4f] outline-none text-sm transition-all ${
+                  className={`w-full px-3 py-2 border rounded-lg focus:border-[#10b981] outline-none text-sm transition-all ${
                     pengeluaranErrors.keterangan ? 'border-red-400 ring-2 ring-red-100' : 'border-gray-200'
                   }`}
                 />
@@ -808,7 +895,7 @@ export default function Keuangan() {
                     if (pengeluaranErrors.jumlah) setPengeluaranErrors({ ...pengeluaranErrors, jumlah: '' })
                   }}
                   placeholder="0"
-                  className={`w-full px-3 py-2 border rounded-lg focus:border-[#1a2f4f] outline-none text-sm transition-all ${
+                  className={`w-full px-3 py-2 border rounded-lg focus:border-[#10b981] outline-none text-sm transition-all ${
                     pengeluaranErrors.jumlah ? 'border-red-400 ring-2 ring-red-100' : 'border-gray-200'
                   }`}
                 />
@@ -828,7 +915,7 @@ export default function Keuangan() {
                     setPengeluaranForm({ ...pengeluaranForm, tanggal: e.target.value })
                     if (pengeluaranErrors.tanggal) setPengeluaranErrors({ ...pengeluaranErrors, tanggal: '' })
                   }}
-                  className={`w-full px-3 py-2 border rounded-lg focus:border-[#1a2f4f] outline-none text-sm transition-all ${
+                  className={`w-full px-3 py-2 border rounded-lg focus:border-[#10b981] outline-none text-sm transition-all ${
                     pengeluaranErrors.tanggal ? 'border-red-400 ring-2 ring-red-100' : 'border-gray-200'
                   }`}
                 />
@@ -849,8 +936,9 @@ export default function Keuangan() {
                 <button
                   type="submit"
                   disabled={submitLoading}
-                  className="flex-1 px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-xl text-sm font-semibold disabled:opacity-50 transition-all active:scale-[0.95]"
+                  className="flex-1 px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-xl text-sm font-semibold disabled:opacity-50 transition-all active:scale-[0.95] flex items-center justify-center gap-2"
                 >
+                  {submitLoading ? <Loader2 size={16} className="animate-spin" /> : null}
                   {submitLoading ? 'Menyimpan...' : 'Simpan'}
                 </button>
               </div>
@@ -906,8 +994,9 @@ export default function Keuangan() {
               <button
                 onClick={handleDelete}
                 disabled={deleteLoading}
-                className="flex-1 px-4 py-2 bg-red-500 hover:bg-red-600 disabled:opacity-50 text-white rounded-xl text-sm font-semibold shadow-lg shadow-red-500/20 transition-all active:scale-[0.95]"
+                className="flex-1 px-4 py-2 bg-red-500 hover:bg-red-600 disabled:opacity-50 text-white rounded-xl text-sm font-semibold shadow-lg shadow-red-500/20 transition-all active:scale-[0.95] flex items-center justify-center gap-2"
               >
+                {deleteLoading ? <Loader2 size={16} className="animate-spin" /> : null}
                 {deleteLoading ? 'Menghapus...' : 'Ya, Hapus'}
               </button>
             </div>
@@ -921,7 +1010,7 @@ export default function Keuangan() {
           <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden border border-gray-100">
             <div className="bg-[#1a2f4f] text-white px-6 py-4 flex items-center justify-between">
               <h2 className="text-lg font-bold flex items-center gap-2">
-                <Receipt size={20} className="text-[#f97316]" />
+                <Receipt size={20} className="text-[#10b981]" />
                 Detail Transaksi Motor
               </h2>
               <button onClick={() => setIsMotorDetailOpen(false)} className="text-white/60 hover:text-white">

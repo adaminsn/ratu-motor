@@ -1,10 +1,11 @@
+// src/pages/admin/Servis.jsx
 import { useEffect, useState, useCallback } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import {
   Wrench, Search, Plus, Trash2, Filter,
   ChevronLeft, ChevronRight, X, Eye, ShieldAlert,
   AlertCircle, Calendar, Phone, CheckCircle2, PlayCircle, XCircle,
-  Clock, User, MapPin, MessageCircle
+  Clock, User, MapPin, MessageCircle, Loader2
 } from 'lucide-react'
 import api from '../../api/axios'
 import toast from 'react-hot-toast'
@@ -39,6 +40,52 @@ const STATUS_ICONS = {
   selesai: CheckCircle2,
   batal: XCircle
 }
+
+// ===== SKELETON COMPONENTS =====
+
+// Skeleton untuk Header
+const SkeletonHeader = () => (
+  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 animate-pulse">
+    <div>
+      <div className="h-8 w-40 bg-gray-200 rounded-lg" />
+      <div className="h-4 w-64 bg-gray-200 rounded-lg mt-1" />
+    </div>
+    <div className="h-10 w-44 bg-gray-200 rounded-xl" />
+  </div>
+)
+
+// Skeleton untuk Search
+const SkeletonSearch = () => (
+  <div className="bg-white rounded-xl shadow-sm p-4 flex flex-col md:flex-row md:items-center gap-4 animate-pulse">
+    <div className="flex-1 h-11 bg-gray-200 rounded-xl" />
+    <div className="h-11 w-40 bg-gray-200 rounded-xl" />
+  </div>
+)
+
+// Skeleton untuk Table
+const SkeletonTable = () => (
+  <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100 animate-pulse">
+    <div className="p-4 border-b border-gray-100">
+      <div className="h-5 w-32 bg-gray-200 rounded" />
+    </div>
+    {[1, 2, 3, 4, 5].map((i) => (
+      <div key={i} className="p-4 border-b border-gray-100 flex items-center gap-4">
+        <div className="flex-1">
+          <div className="h-4 w-32 bg-gray-200 rounded" />
+          <div className="h-3 w-24 bg-gray-200 rounded mt-1" />
+        </div>
+        <div className="h-4 w-28 bg-gray-200 rounded" />
+        <div className="h-4 w-20 bg-gray-200 rounded" />
+        <div className="h-4 w-24 bg-gray-200 rounded" />
+        <div className="h-6 w-20 bg-gray-200 rounded-full" />
+        <div className="flex gap-2">
+          <div className="h-8 w-8 bg-gray-200 rounded-lg" />
+          <div className="h-8 w-8 bg-gray-200 rounded-lg" />
+        </div>
+      </div>
+    ))}
+  </div>
+)
 
 export default function Servis() {
   const [searchParams, setSearchParams] = useSearchParams()
@@ -100,21 +147,20 @@ export default function Servis() {
   }, [search, statusFilter, currentPage])
 
   const fetchMotorsTerjual = useCallback(async () => {
-  try {
-    const response = await api.get('/admin/transaksi', {
-      params: { per_page: 100 }
-    })
-    // Ambil motor unik dari daftar transaksi yang benar-benar ada
-    const motors = (response.data?.data || [])
-      .map(t => t.motor)
-      .filter((motor, index, self) => 
-        motor && self.findIndex(m => m?.id === motor.id) === index
-      )
-    setMotorsTerjual(motors)
-  } catch (err) {
-    console.error('Error fetching motors from transaksi:', err)
-  }
-}, [])
+    try {
+      const response = await api.get('/admin/transaksi', {
+        params: { per_page: 100 }
+      })
+      const motors = (response.data?.data || [])
+        .map(t => t.motor)
+        .filter((motor, index, self) => 
+          motor && self.findIndex(m => m?.id === motor.id) === index
+        )
+      setMotorsTerjual(motors)
+    } catch (err) {
+      console.error('Error fetching motors from transaksi:', err)
+    }
+  }, [])
 
   useEffect(() => {
     fetchServis()
@@ -201,44 +247,41 @@ export default function Servis() {
     }
   }
 
-const handleStatusChange = async (servisId, newStatus) => {
-  try {
-    setSubmitLoading(true)
-    
-    console.log('📤 Updating status to:', newStatus)
-    console.log('📤 Servis ID:', servisId)
-    
-    const response = await api.put(`/admin/servis/${servisId}`, { status: newStatus })
-        
-    const statusLabel = STATUS_LABELS[newStatus] || newStatus
-    toast.success(`Status servis berubah menjadi "${statusLabel}"`)
-    
-    // ===== UPDATE STATE LOKAL =====
-    setServisList(prevList => 
-      prevList.map(item => {
-        if (item.id === servisId) {
-          // Update status di local state
-          return { 
-            ...item, 
-            status: newStatus
+  const handleStatusChange = async (servisId, newStatus) => {
+    try {
+      setSubmitLoading(true)
+      
+      console.log('📤 Updating status to:', newStatus)
+      console.log('📤 Servis ID:', servisId)
+      
+      const response = await api.put(`/admin/servis/${servisId}`, { status: newStatus })
+          
+      const statusLabel = STATUS_LABELS[newStatus] || newStatus
+      toast.success(`Status servis berubah menjadi "${statusLabel}"`)
+      
+      setServisList(prevList => 
+        prevList.map(item => {
+          if (item.id === servisId) {
+            return { 
+              ...item, 
+              status: newStatus
+            }
           }
-        }
-        return item
-      })
-    )
-    
-  } catch (err) {
-    console.error('❌ Error updating servis status:', err)
-    console.error('❌ Error response:', err.response?.data)
-    toast.error(err.response?.data?.message || 'Gagal memperbarui status servis')
-  } finally {
-    setSubmitLoading(false)
+          return item
+        })
+      )
+      
+    } catch (err) {
+      console.error('❌ Error updating servis status:', err)
+      console.error('❌ Error response:', err.response?.data)
+      toast.error(err.response?.data?.message || 'Gagal memperbarui status servis')
+    } finally {
+      setSubmitLoading(false)
+    }
   }
-}
 
   const hasActiveFilters = search || statusFilter
 
-  // Render status badge dengan icon
   const renderStatusBadge = (status) => {
     const Icon = STATUS_ICONS[status] || Clock
     return (
@@ -249,25 +292,41 @@ const handleStatusChange = async (servisId, newStatus) => {
     )
   }
 
+  // ===== RENDER SKELETON SAAT LOADING =====
+  if (loading) {
+    return (
+      <div className="space-y-4 md:space-y-6 pb-8">
+        <SkeletonHeader />
+        <SkeletonSearch />
+        <SkeletonTable />
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-4 md:space-y-6 pb-8">
 
+      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-[#1a2f4f]">Booking Servis</h1>
+          <h1 className="text-2xl font-bold text-[#1a2f4f] flex items-center gap-2">
+            <Wrench size={24} className="text-[#10b981]" />
+            Booking Servis
+          </h1>
           <p className="text-sm text-gray-500 mt-1">
             Kelola jadwal servis motor (khusus unit yang sudah terjual / garansi purnajual)
           </p>
         </div>
         <button
           onClick={openCreateModal}
-          className="flex items-center justify-center gap-2 bg-[#f97316] hover:bg-orange-600 text-white font-semibold px-4 py-2.5 rounded-xl shadow-lg shadow-orange-500/10 active:scale-[0.98] transition-all duration-200"
+          className="flex items-center justify-center gap-2 bg-[#10b981] hover:bg-emerald-600 text-white font-semibold px-4 py-2.5 rounded-xl shadow-lg shadow-emerald-500/20 active:scale-[0.98] transition-all duration-200"
         >
           <Plus size={18} />
           <span>Booking Servis Baru</span>
         </button>
       </div>
 
+      {/* Search & Filter */}
       <div className="bg-white rounded-xl shadow-sm p-4 flex flex-col md:flex-row md:items-center gap-4">
         <div className="flex-1 relative">
           <Search size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
@@ -276,7 +335,7 @@ const handleStatusChange = async (servisId, newStatus) => {
             placeholder="Cari nama pelanggan, no HP, merk, atau tipe motor..."
             value={search}
             onChange={handleSearchChange}
-            className="w-full pl-11 pr-4 py-2.5 border border-gray-200 rounded-xl focus:border-[#1a2f4f] focus:ring-2 focus:ring-[#1a2f4f]/10 outline-none text-sm"
+            className="w-full pl-11 pr-4 py-2.5 border border-gray-200 rounded-xl focus:border-[#10b981] focus:ring-2 focus:ring-[#10b981]/10 outline-none text-sm"
           />
         </div>
 
@@ -285,7 +344,7 @@ const handleStatusChange = async (servisId, newStatus) => {
           <select
             value={statusFilter}
             onChange={(e) => handleStatusFilterChange(e.target.value)}
-            className="border border-gray-200 rounded-xl px-4 py-2.5 outline-none text-sm bg-white focus:border-[#1a2f4f] focus:ring-2 focus:ring-[#1a2f4f]/10"
+            className="border border-gray-200 rounded-xl px-4 py-2.5 outline-none text-sm bg-white focus:border-[#10b981] focus:ring-2 focus:ring-[#10b981]/10"
           >
             <option value="">Semua Status</option>
             <option value="menunggu">Menunggu</option>
@@ -308,13 +367,9 @@ const handleStatusChange = async (servisId, newStatus) => {
         )}
       </div>
 
+      {/* Table */}
       <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100">
-        {loading ? (
-          <div className="flex flex-col items-center justify-center py-20">
-            <div className="w-10 h-10 border-4 border-[#1a2f4f] border-t-[#f97316] rounded-full animate-spin" />
-            <p className="text-gray-400 text-xs mt-4">Memuat data servis...</p>
-          </div>
-        ) : error ? (
+        {error ? (
           <div className="p-8 text-center text-red-500">
             <AlertCircle size={32} className="mx-auto mb-2" />
             <p>{error}</p>
@@ -332,6 +387,7 @@ const handleStatusChange = async (servisId, newStatus) => {
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="bg-gray-50 border-b border-gray-100 text-xs text-gray-400 uppercase tracking-wider">
+                  <th className="px-6 py-4 font-semibold">#</th>
                   <th className="px-6 py-4 font-semibold">Pelanggan</th>
                   <th className="px-6 py-4 font-semibold">Motor</th>
                   <th className="px-6 py-4 font-semibold">Jenis Servis</th>
@@ -341,8 +397,11 @@ const handleStatusChange = async (servisId, newStatus) => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
-                {servisList.map((servis) => (
+                {servisList.map((servis, index) => (
                   <tr key={servis.id} className="hover:bg-gray-50/50 transition-colors text-sm text-gray-700">
+                    <td className="px-6 py-4.5 text-xs text-gray-400">
+                      {((currentPage - 1) * 10) + index + 1}
+                    </td>
 
                     <td className="px-6 py-4.5">
                       <div className="font-semibold text-gray-800">{servis.nama_pelanggan}</div>
@@ -365,7 +424,7 @@ const handleStatusChange = async (servisId, newStatus) => {
 
                     <td className="px-6 py-4.5">
                       <div className="flex items-center gap-1 text-xs">
-                        <Calendar size={11} className="text-gray-400" />
+                        <Calendar size={11} className="text-[#10b981]" />
                         {formatDate(servis.tanggal_servis)}
                       </div>
                       {servis.estimasi_selesai && (
@@ -443,7 +502,7 @@ const handleStatusChange = async (servisId, newStatus) => {
                         {/* Tombol Detail & Hapus (selalu muncul) */}
                         <button
                           onClick={() => openDetailModal(servis)}
-                          className="p-1.5 text-gray-400 hover:text-[#1a2f4f] rounded-lg hover:bg-gray-100 transition-colors"
+                          className="p-1.5 text-gray-400 hover:text-[#10b981] rounded-lg hover:bg-gray-100 transition-colors"
                           title="Detail"
                         >
                           <Eye size={16} />
@@ -466,6 +525,7 @@ const handleStatusChange = async (servisId, newStatus) => {
           </div>
         )}
 
+        {/* Pagination */}
         {total > 0 && (
           <div className="bg-gray-50 px-6 py-4 border-t border-gray-100 flex items-center justify-between text-xs text-gray-500">
             <div>
@@ -501,7 +561,7 @@ const handleStatusChange = async (servisId, newStatus) => {
 
             <div className="bg-[#1a2f4f] text-white px-6 py-4 flex items-center justify-between">
               <h2 className="text-lg font-bold flex items-center gap-2">
-                <Wrench size={20} className="text-[#f97316]" />
+                <Wrench size={20} className="text-[#10b981]" />
                 <span>Booking Servis Baru</span>
               </h2>
               <button onClick={() => setIsModalOpen(false)} className="text-white/60 hover:text-white transition-colors">
@@ -520,7 +580,7 @@ const handleStatusChange = async (servisId, newStatus) => {
                     required
                     value={formData.motor_id}
                     onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:border-[#1a2f4f] outline-none text-sm"
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:border-[#10b981] focus:ring-1 focus:ring-[#10b981]/20 outline-none text-sm"
                   >
                     <option value="">-- Pilih Motor --</option>
                     {motorsTerjual.map((m) => (
@@ -543,7 +603,7 @@ const handleStatusChange = async (servisId, newStatus) => {
                     placeholder="Nama pemilik motor"
                     value={formData.nama_pelanggan}
                     onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:border-[#1a2f4f] outline-none text-sm"
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:border-[#10b981] outline-none text-sm"
                   />
                 </div>
 
@@ -556,7 +616,7 @@ const handleStatusChange = async (servisId, newStatus) => {
                     placeholder="08xxxxxxxxxx"
                     value={formData.no_hp}
                     onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:border-[#1a2f4f] outline-none text-sm"
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:border-[#10b981] outline-none text-sm"
                   />
                 </div>
 
@@ -568,7 +628,7 @@ const handleStatusChange = async (servisId, newStatus) => {
                     placeholder="Alamat pelanggan (opsional)"
                     value={formData.alamat}
                     onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:border-[#1a2f4f] outline-none text-sm"
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:border-[#10b981] outline-none text-sm"
                   />
                 </div>
 
@@ -581,7 +641,7 @@ const handleStatusChange = async (servisId, newStatus) => {
                     placeholder="Contoh: Ganti Oli, Servis Rutin"
                     value={formData.jenis_servis}
                     onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:border-[#1a2f4f] outline-none text-sm"
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:border-[#10b981] outline-none text-sm"
                   />
                 </div>
 
@@ -593,7 +653,7 @@ const handleStatusChange = async (servisId, newStatus) => {
                     required
                     value={formData.tanggal_servis}
                     onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:border-[#1a2f4f] outline-none text-sm"
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:border-[#10b981] outline-none text-sm"
                   />
                 </div>
 
@@ -604,7 +664,7 @@ const handleStatusChange = async (servisId, newStatus) => {
                     name="estimasi_selesai"
                     value={formData.estimasi_selesai}
                     onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:border-[#1a2f4f] outline-none text-sm"
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:border-[#10b981] outline-none text-sm"
                   />
                 </div>
 
@@ -616,7 +676,7 @@ const handleStatusChange = async (servisId, newStatus) => {
                     placeholder="Keluhan atau kebutuhan servis dari pelanggan"
                     value={formData.keluhan}
                     onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:border-[#1a2f4f] outline-none text-sm resize-none"
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:border-[#10b981] outline-none text-sm resize-none"
                   />
                 </div>
 
@@ -628,7 +688,7 @@ const handleStatusChange = async (servisId, newStatus) => {
                     placeholder="Catatan internal (opsional)"
                     value={formData.catatan}
                     onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:border-[#1a2f4f] outline-none text-sm resize-none"
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:border-[#10b981] outline-none text-sm resize-none"
                   />
                 </div>
               </div>
@@ -644,8 +704,9 @@ const handleStatusChange = async (servisId, newStatus) => {
                 <button
                   type="submit"
                   disabled={submitLoading}
-                  className="px-5 py-2 bg-[#f97316] hover:bg-orange-600 disabled:opacity-50 text-white rounded-xl text-sm font-semibold shadow-lg shadow-orange-500/10 active:scale-[0.98] transition-all"
+                  className="px-5 py-2 bg-[#10b981] hover:bg-emerald-600 disabled:opacity-50 text-white rounded-xl text-sm font-semibold shadow-lg shadow-emerald-500/20 active:scale-[0.98] transition-all flex items-center gap-2"
                 >
+                  {submitLoading ? <Loader2 size={16} className="animate-spin" /> : null}
                   {submitLoading ? 'Menyimpan...' : 'Buat Booking'}
                 </button>
               </div>
@@ -662,7 +723,7 @@ const handleStatusChange = async (servisId, newStatus) => {
 
             <div className="bg-[#1a2f4f] text-white px-6 py-4 flex items-center justify-between">
               <h2 className="text-lg font-bold flex items-center gap-2">
-                <Eye size={20} className="text-[#f97316]" />
+                <Eye size={20} className="text-[#10b981]" />
                 <span>Detail Booking Servis</span>
               </h2>
               <button onClick={() => setIsDetailOpen(false)} className="text-white/60 hover:text-white transition-colors">
@@ -709,7 +770,7 @@ const handleStatusChange = async (servisId, newStatus) => {
                 </div>
                 <div>
                   <p className="text-[10px] text-gray-400 uppercase font-semibold flex items-center gap-1">
-                    <Calendar size={12} /> Tanggal Servis
+                    <Calendar size={12} className="text-[#10b981]" /> Tanggal Servis
                   </p>
                   <p className="font-medium">{formatDate(selectedServis.tanggal_servis)}</p>
                 </div>
@@ -779,8 +840,9 @@ const handleStatusChange = async (servisId, newStatus) => {
               <button
                 onClick={handleDelete}
                 disabled={submitLoading}
-                className="flex-1 px-4 py-2 bg-red-500 hover:bg-red-600 disabled:opacity-50 text-white rounded-xl text-xs font-semibold shadow-lg shadow-red-500/10 transition-colors"
+                className="flex-1 px-4 py-2 bg-red-500 hover:bg-red-600 disabled:opacity-50 text-white rounded-xl text-xs font-semibold shadow-lg shadow-red-500/10 transition-colors flex items-center justify-center gap-2"
               >
+                {submitLoading ? <Loader2 size={14} className="animate-spin" /> : null}
                 {submitLoading ? 'Menghapus...' : 'Hapus Booking'}
               </button>
             </div>

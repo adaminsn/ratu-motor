@@ -1,3 +1,4 @@
+// src/pages/admin/Dashboard.jsx
 import { useEffect, useState, useCallback, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
@@ -7,7 +8,7 @@ import {
 import {
   Car, ShoppingCart, Wallet, TrendingUp, AlertCircle,
   Calendar, ArrowUp, ArrowDown, Package, DollarSign,
-  ChevronRight, Clock, Users, Bike, Search, Filter
+  ChevronRight, Clock, Users, Bike, Search, Filter, Home
 } from 'lucide-react'
 import api from '../../api/axios'
 import toast from 'react-hot-toast'
@@ -29,7 +30,7 @@ const formatDate = (dateStr) => {
   })
 }
 
-const COLORS = ['#1a2f4f', '#f97316', '#10b981', '#6366f1', '#f59e0b', '#ef4444']
+const COLORS = ['#1a2f4f', '#10b981', '#f97316', '#6366f1', '#f59e0b', '#ef4444']
 
 const getStatusBadge = (status) => {
   const styles = {
@@ -40,17 +41,72 @@ const getStatusBadge = (status) => {
   return styles[status] || styles.tersedia
 }
 
+// ===== SKELETON COMPONENTS =====
+
+// Skeleton untuk Stat Cards
+const SkeletonStats = () => (
+  <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+    {[1, 2, 3, 4].map((i) => (
+      <div key={i} className="bg-white rounded-xl shadow-sm p-4 md:p-5 animate-pulse">
+        <div className="flex items-start justify-between">
+          <div className="bg-gray-200 p-2 md:p-3 rounded-lg w-10 h-10 md:w-12 md:h-12" />
+          <div className="w-4 h-4 bg-gray-200 rounded-full" />
+        </div>
+        <div className="mt-2 md:mt-3">
+          <div className="h-3 w-16 bg-gray-200 rounded" />
+          <div className="h-6 w-12 bg-gray-200 rounded mt-1" />
+        </div>
+      </div>
+    ))}
+  </div>
+)
+
+// Skeleton untuk Chart
+const SkeletonChart = () => (
+  <div className="bg-white rounded-xl shadow-sm p-4 md:p-5 animate-pulse">
+    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
+      <div className="h-5 w-32 bg-gray-200 rounded" />
+      <div className="h-4 w-20 bg-gray-200 rounded-full" />
+    </div>
+    <div className="h-[180px] md:h-[220px] bg-gray-100 rounded-lg flex items-center justify-center">
+      <div className="text-gray-400 text-sm">Memuat grafik...</div>
+    </div>
+  </div>
+)
+
+// Skeleton untuk Quick Actions
+const SkeletonActions = () => (
+  <div className="grid grid-cols-2 gap-3 md:gap-4">
+    <div className="bg-gray-200 rounded-xl p-4 md:p-5 h-24 md:h-28 animate-pulse" />
+    <div className="bg-gray-200 rounded-xl p-4 md:p-5 h-24 md:h-28 animate-pulse" />
+  </div>
+)
+
+// Skeleton untuk Notifikasi Motor
+const SkeletonNotification = () => (
+  <div className="bg-white rounded-xl shadow-sm p-4 md:p-5 border-l-4 border-gray-200 animate-pulse">
+    <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+      <div className="flex items-center gap-2">
+        <div className="bg-gray-200 p-2 rounded-lg w-8 h-8" />
+        <div>
+          <div className="h-4 w-40 bg-gray-200 rounded" />
+          <div className="h-3 w-24 bg-gray-200 rounded mt-1" />
+        </div>
+      </div>
+      <div className="h-4 w-20 bg-gray-200 rounded ml-auto" />
+    </div>
+  </div>
+)
+
 export default function Dashboard() {
   const navigate = useNavigate()
   const [stats, setStats] = useState(null)
   const [charts, setCharts] = useState(null)
   const [motorBelumTerjual, setMotorBelumTerjual] = useState([])
-  const [transaksiTerbaru, setTransaksiTerbaru] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [selectedPeriod, setSelectedPeriod] = useState('month')
 
-  // Gunakan useCallback untuk fetchData
   const fetchData = useCallback(async () => {
     try {
       console.log('Fetching dashboard data...')
@@ -92,9 +148,8 @@ export default function Dashboard() {
     return () => {
       isMounted = false
     }
-  }, [fetchData]) // ← fetchData sebagai dependency
+  }, [fetchData])
 
-  // Memoize statCards agar tidak berubah setiap render
   const statCards = useMemo(() => [
     {
       label: 'Motor Tersedia',
@@ -109,9 +164,9 @@ export default function Dashboard() {
       label: 'Motor Reserved',
       value: stats?.total_motor_reserved ?? 0,
       icon: Clock,
-      color: 'bg-[#f97316]',
-      iconColor: 'text-[#f97316]',
-      bgColor: 'bg-[#f97316]/10',
+      color: 'bg-[#10b981]',
+      iconColor: 'text-[#10b981]',
+      bgColor: 'bg-[#10b981]/10',
       href: '/admin/motors?status=reserved'
     },
     {
@@ -132,17 +187,33 @@ export default function Dashboard() {
       bgColor: 'bg-indigo-50',
       href: '/admin/motors'
     },
-  ], [stats]) // ← hanya berubah ketika stats berubah
+  ], [stats])
 
-  // Memoize barData
   const barData = useMemo(() => charts?.motor_per_merk || [], [charts])
 
-  if (loading) return (
-    <div className="flex flex-col items-center justify-center h-64 md:h-96">
-      <div className="w-10 h-10 md:w-12 md:h-12 border-4 border-[#1a2f4f] border-t-[#f97316] rounded-full animate-spin" />
-      <p className="text-gray-500 text-sm mt-4">Memuat dashboard...</p>
-    </div>
-  )
+  // ===== RENDER SKELETON SAAT LOADING =====
+  if (loading) {
+    return (
+      <div className="space-y-4 md:space-y-6 pb-6 md:pb-8">
+        {/* Header Skeleton */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div>
+            <div className="h-7 w-32 bg-gray-200 rounded animate-pulse" />
+            <div className="h-4 w-48 bg-gray-200 rounded mt-1 animate-pulse" />
+          </div>
+          <div className="flex gap-2">
+            <div className="h-8 w-20 bg-gray-200 rounded-xl animate-pulse" />
+            <div className="h-8 w-40 bg-gray-200 rounded-xl animate-pulse" />
+          </div>
+        </div>
+
+        <SkeletonStats />
+        <SkeletonChart />
+        <SkeletonActions />
+        <SkeletonNotification />
+      </div>
+    )
+  }
 
   if (error) {
     return (
@@ -174,16 +245,27 @@ export default function Dashboard() {
             Ringkasan data showroom Ratu Motor
           </p>
         </div>
-        <div className="flex items-center gap-2 text-xs md:text-sm text-gray-500 bg-white px-3 py-1.5 md:px-4 md:py-2 rounded-xl shadow-sm">
-          <Calendar size={14} className="text-[#f97316] md:w-4 md:h-4" />
-          <span className="truncate">
-            {new Date().toLocaleDateString('id-ID', {
-              weekday: 'short',
-              day: 'numeric',
-              month: 'short',
-              year: 'numeric'
-            })}
-          </span>
+        <div className="flex items-center gap-2">
+          {/* ===== TOMBOL HOME ===== */}
+          <button
+            onClick={() => navigate('/')}
+            className="flex items-center gap-2 text-xs md:text-sm bg-[#10b981] hover:bg-emerald-600 text-white px-3 py-1.5 md:px-4 md:py-2 rounded-xl shadow-lg shadow-emerald-500/20 transition-all duration-200 active:scale-[0.95]"
+          >
+            <Home size={16} className="md:w-4 md:h-4" />
+            <span>Home</span>
+          </button>
+          
+          <div className="flex items-center gap-2 text-xs md:text-sm text-gray-500 bg-white px-3 py-1.5 md:px-4 md:py-2 rounded-xl shadow-sm">
+            <Calendar size={14} className="text-[#10b981] md:w-4 md:h-4" />
+            <span className="truncate">
+              {new Date().toLocaleDateString('id-ID', {
+                weekday: 'short',
+                day: 'numeric',
+                month: 'short',
+                year: 'numeric'
+              })}
+            </span>
+          </div>
         </div>
       </div>
 
@@ -199,7 +281,7 @@ export default function Dashboard() {
               <div className={`${bgColor} p-2 md:p-3 rounded-lg group-hover:scale-105 transition-transform duration-200`}>
                 <Icon size={16} className={`${iconColor} md:w-5 md:h-5`} />
               </div>
-              <ChevronRight size={14} className="text-gray-300 group-hover:text-[#f97316] group-hover:translate-x-0.5 transition-all md:w-4 md:h-4" />
+              <ChevronRight size={14} className="text-gray-300 group-hover:text-[#10b981] group-hover:translate-x-0.5 transition-all md:w-4 md:h-4" />
             </div>
             <div className="mt-2 md:mt-3">
               <p className="text-[10px] md:text-xs text-gray-500">{label}</p>
@@ -260,7 +342,7 @@ export default function Dashboard() {
           </div>
           <div
             onClick={() => navigate('/admin/transaksi/create')}
-            className="bg-gradient-to-br from-[#f97316] to-orange-500 rounded-xl p-4 md:p-5 text-white cursor-pointer hover:shadow-lg transition-all duration-200 active:scale-[0.98]"
+            className="bg-gradient-to-br from-[#10b981] to-emerald-600 rounded-xl p-4 md:p-5 text-white cursor-pointer hover:shadow-lg transition-all duration-200 active:scale-[0.98]"
           >
             <ShoppingCart size={20} className="mb-2 md:w-6 md:h-6" />
             <p className="text-sm md:text-base font-semibold">Transaksi</p>
@@ -272,11 +354,11 @@ export default function Dashboard() {
 
       {/* ===== NOTIFIKASI MOTOR BELUM TERJUAL ===== */}
       {motorBelumTerjual && motorBelumTerjual.length > 0 ? (
-        <div className="bg-white rounded-xl shadow-sm p-4 md:p-5 border-l-4 border-[#f97316]">
+        <div className="bg-white rounded-xl shadow-sm p-4 md:p-5 border-l-4 border-[#10b981]">
           <div className="flex flex-col sm:flex-row sm:items-center gap-3">
             <div className="flex items-center gap-2">
-              <div className="bg-orange-50 p-2 rounded-lg flex-shrink-0">
-                <AlertCircle size={16} className="text-[#f97316] md:w-5 md:h-5" />
+              <div className="bg-emerald-50 p-2 rounded-lg flex-shrink-0">
+                <AlertCircle size={16} className="text-[#10b981] md:w-5 md:h-5" />
               </div>
               <div>
                 <h2 className="text-sm md:text-base font-semibold text-gray-700">
@@ -289,7 +371,7 @@ export default function Dashboard() {
             </div>
             <button
               onClick={() => navigate('/admin/motors?status=tersedia')}
-              className="text-xs text-[#f97316] hover:text-orange-600 font-medium ml-auto"
+              className="text-xs text-[#10b981] hover:text-emerald-600 font-medium ml-auto"
             >
               Lihat Semua →
             </button>
@@ -306,7 +388,7 @@ export default function Dashboard() {
                       {motor.merk || 'Unknown'} {motor.tipe || ''}
                     </p>
                     <p className="text-xs text-gray-400 mt-0.5">{formatDate(motor.tanggal_masuk)}</p>
-                    <p className="text-xs font-semibold text-[#f97316] mt-1">{days} hari</p>
+                    <p className="text-xs font-semibold text-[#10b981] mt-1">{days} hari</p>
                   </div>
                 )
               })}
@@ -339,7 +421,7 @@ export default function Dashboard() {
                         {motor.merk || 'Unknown'} {motor.tipe || ''}
                       </td>
                       <td className="py-2.5 text-gray-500 text-sm">{formatDate(motor.tanggal_masuk)}</td>
-                      <td className="py-2.5 text-[#f97316] font-semibold text-sm text-right">
+                      <td className="py-2.5 text-[#10b981] font-semibold text-sm text-right">
                         {days} hari
                       </td>
                     </tr>

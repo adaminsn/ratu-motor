@@ -1,9 +1,10 @@
+// src/pages/admin/Motors.jsx
 import { useEffect, useState, useCallback } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { 
   Car, Search, Plus, Edit2, Trash2, Filter, 
   ChevronLeft, ChevronRight, X, Eye, ShieldAlert,
-  AlertCircle, DollarSign, Calendar, RefreshCw
+  AlertCircle, DollarSign, Calendar, RefreshCw, Loader2
 } from 'lucide-react'
 import api from '../../api/axios'
 import toast from 'react-hot-toast'
@@ -31,16 +32,9 @@ const formatDate = (dateStr) => {
 // ===== FUNGSI GET PHOTO URL =====
 const getPhotoUrl = (path) => {
   if (!path) return ''
-  
-  // Jika sudah URL lengkap, langsung return
   if (path.startsWith('http')) return path
-  
-  // Base URL untuk akses file
   const baseUrl = 'http://127.0.0.1:8000'
-  
-  // Hapus 'storage/' di depan jika ada
   let cleanPath = path.replace(/^storage\//, '')
-  
   return `${baseUrl}/storage/${cleanPath}`
 }
 
@@ -49,6 +43,56 @@ const STATUS_BADGES = {
   reserved: 'bg-amber-100 text-amber-800 border-amber-200',
   terjual: 'bg-gray-100 text-gray-800 border-gray-200'
 }
+
+// ===== SKELETON COMPONENTS =====
+
+// Skeleton untuk Header
+const SkeletonHeader = () => (
+  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 animate-pulse">
+    <div>
+      <div className="h-8 w-32 bg-gray-200 rounded-lg" />
+      <div className="h-4 w-56 bg-gray-200 rounded-lg mt-1" />
+    </div>
+    <div className="h-10 w-40 bg-gray-200 rounded-xl" />
+  </div>
+)
+
+// Skeleton untuk Filters
+const SkeletonFilters = () => (
+  <div className="bg-white rounded-xl shadow-sm p-4 space-y-3 animate-pulse">
+    <div className="flex flex-col md:flex-row md:items-center gap-4">
+      <div className="flex-1 h-11 bg-gray-200 rounded-xl" />
+      <div className="h-11 w-40 bg-gray-200 rounded-xl" />
+      <div className="h-11 w-32 bg-gray-200 rounded-xl" />
+    </div>
+  </div>
+)
+
+// Skeleton untuk Table
+const SkeletonTable = () => (
+  <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100 animate-pulse">
+    <div className="p-4 border-b border-gray-100">
+      <div className="h-5 w-32 bg-gray-200 rounded" />
+    </div>
+    {[1, 2, 3, 4, 5].map((i) => (
+      <div key={i} className="p-4 border-b border-gray-100 flex items-center gap-4">
+        <div className="flex-1">
+          <div className="h-4 w-32 bg-gray-200 rounded" />
+          <div className="h-3 w-20 bg-gray-200 rounded mt-1" />
+        </div>
+        <div className="h-4 w-24 bg-gray-200 rounded" />
+        <div className="h-4 w-28 bg-gray-200 rounded" />
+        <div className="h-4 w-20 bg-gray-200 rounded" />
+        <div className="h-6 w-20 bg-gray-200 rounded-full" />
+        <div className="flex gap-2">
+          <div className="h-8 w-8 bg-gray-200 rounded-lg" />
+          <div className="h-8 w-8 bg-gray-200 rounded-lg" />
+          <div className="h-8 w-8 bg-gray-200 rounded-lg" />
+        </div>
+      </div>
+    ))}
+  </div>
+)
 
 export default function Motors({ openCreate = false }) {
   const { user } = useAuthStore()
@@ -426,13 +470,27 @@ export default function Motors({ openCreate = false }) {
 
   const hasActiveFilters = search || statusFilter || merkFilter || tahunFilter || hargaMin || hargaMax
 
+  // ===== RENDER SKELETON SAAT LOADING =====
+  if (loading) {
+    return (
+      <div className="space-y-4 md:space-y-6 pb-8">
+        <SkeletonHeader />
+        <SkeletonFilters />
+        <SkeletonTable />
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-4 md:space-y-6 pb-8">
       
       {/* ===== HEADER ===== */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-[#1a2f4f]">Stok Motor</h1>
+          <h1 className="text-2xl font-bold text-[#1a2f4f] flex items-center gap-2">
+            <Car size={24} className="text-[#10b981]" />
+            Stok Motor
+          </h1>
           <p className="text-sm text-gray-500 mt-1">
             Kelola data dan status ketersediaan motor showroom
           </p>
@@ -440,7 +498,7 @@ export default function Motors({ openCreate = false }) {
         {!isKasir && (
           <button
             onClick={openCreateModal}
-            className="flex items-center justify-center gap-2 bg-[#f97316] hover:bg-orange-600 text-white font-semibold px-4 py-2.5 rounded-xl shadow-lg shadow-orange-500/10 active:scale-[0.98] transition-all duration-200"
+            className="flex items-center justify-center gap-2 bg-[#10b981] hover:bg-emerald-600 text-white font-semibold px-4 py-2.5 rounded-xl shadow-lg shadow-emerald-500/20 active:scale-[0.98] transition-all duration-200"
           >
             <Plus size={18} />
             <span>Tambah Motor</span>
@@ -460,7 +518,7 @@ export default function Motors({ openCreate = false }) {
               placeholder="Cari berdasarkan No Rangka, No Mesin, Merk, atau Tipe..."
               value={search}
               onChange={handleSearchChange}
-              className="w-full pl-11 pr-4 py-2.5 border border-gray-200 rounded-xl focus:border-[#1a2f4f] focus:ring-2 focus:ring-[#1a2f4f]/10 outline-none text-sm"
+              className="w-full pl-11 pr-4 py-2.5 border border-gray-200 rounded-xl focus:border-[#10b981] focus:ring-2 focus:ring-[#10b981]/10 outline-none text-sm"
             />
           </div>
 
@@ -470,7 +528,7 @@ export default function Motors({ openCreate = false }) {
             <select
               value={statusFilter}
               onChange={(e) => handleStatusFilterChange(e.target.value)}
-              className="border border-gray-200 rounded-xl px-4 py-2.5 outline-none text-sm bg-white focus:border-[#1a2f4f] focus:ring-2 focus:ring-[#1a2f4f]/10"
+              className="border border-gray-200 rounded-xl px-4 py-2.5 outline-none text-sm bg-white focus:border-[#10b981] focus:ring-2 focus:ring-[#10b981]/10"
             >
               <option value="">Semua Status</option>
               <option value="tersedia">Tersedia</option>
@@ -482,7 +540,7 @@ export default function Motors({ openCreate = false }) {
           {/* Toggle filter lanjutan */}
           <button
             onClick={() => setShowMoreFilters(prev => !prev)}
-            className="text-xs font-semibold text-[#1a2f4f] hover:text-[#f97316] px-3 py-2.5 border border-gray-200 rounded-xl transition-colors whitespace-nowrap"
+            className="text-xs font-semibold text-[#1a2f4f] hover:text-[#10b981] px-3 py-2.5 border border-gray-200 rounded-xl transition-colors whitespace-nowrap"
           >
             {showMoreFilters ? 'Sembunyikan Filter' : 'Filter Lainnya'}
           </button>
@@ -508,7 +566,7 @@ export default function Motors({ openCreate = false }) {
                 placeholder="Contoh: Honda"
                 value={merkFilter}
                 onChange={(e) => handleMerkFilterChange(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-200 rounded-lg outline-none text-sm focus:border-[#1a2f4f]"
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg outline-none text-sm focus:border-[#10b981] focus:ring-1 focus:ring-[#10b981]/10"
               />
             </div>
             <div>
@@ -518,7 +576,7 @@ export default function Motors({ openCreate = false }) {
                 placeholder="Contoh: 2024"
                 value={tahunFilter}
                 onChange={(e) => handleTahunFilterChange(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-200 rounded-lg outline-none text-sm focus:border-[#1a2f4f]"
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg outline-none text-sm focus:border-[#10b981] focus:ring-1 focus:ring-[#10b981]/10"
                 min="1980"
                 max={new Date().getFullYear() + 1}
                 onKeyDown={(e) => {
@@ -537,7 +595,7 @@ export default function Motors({ openCreate = false }) {
                 min="0"
                 value={hargaMin}
                 onChange={(e) => handleHargaMinChange(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-200 rounded-lg outline-none text-sm focus:border-[#1a2f4f]"
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg outline-none text-sm focus:border-[#10b981] focus:ring-1 focus:ring-[#10b981]/10"
                 onKeyDown={(e) => {
                   if (e.key === '-' || e.key === 'e') {
                     e.preventDefault();
@@ -554,7 +612,7 @@ export default function Motors({ openCreate = false }) {
                 placeholder="Tanpa batas"
                 value={hargaMax}
                 onChange={(e) => handleHargaMaxChange(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-200 rounded-lg outline-none text-sm focus:border-[#1a2f4f]"
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg outline-none text-sm focus:border-[#10b981] focus:ring-1 focus:ring-[#10b981]/10"
                 onKeyDown={(e) => {
                   if (e.key === '-' || e.key === 'e') {
                     e.preventDefault();
@@ -569,12 +627,7 @@ export default function Motors({ openCreate = false }) {
 
       {/* ===== TABLE CONTAINER ===== */}
       <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100">
-        {loading ? (
-          <div className="flex flex-col items-center justify-center py-20">
-            <div className="w-10 h-10 border-4 border-[#1a2f4f] border-t-[#f97316] rounded-full animate-spin" />
-            <p className="text-gray-400 text-xs mt-4">Memuat data motor...</p>
-          </div>
-        ) : error ? (
+        {error ? (
           <div className="p-8 text-center text-red-500">
             <AlertCircle size={32} className="mx-auto mb-2" />
             <p>{error}</p>
@@ -592,6 +645,7 @@ export default function Motors({ openCreate = false }) {
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="bg-gray-50 border-b border-gray-100 text-xs text-gray-400 uppercase tracking-wider">
+                  <th className="px-6 py-4 font-semibold">#</th>
                   <th className="px-6 py-4 font-semibold">Motor</th>
                   <th className="px-6 py-4 font-semibold">Warna / Tahun</th>
                   <th className="px-6 py-4 font-semibold">No Rangka / Mesin</th>
@@ -601,8 +655,11 @@ export default function Motors({ openCreate = false }) {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
-                {motors.map((motor) => (
+                {motors.map((motor, index) => (
                   <tr key={motor.id} className="hover:bg-gray-50/50 transition-colors text-sm text-gray-700">
+                    <td className="px-6 py-4.5 text-xs text-gray-400">
+                      {((currentPage - 1) * perPage) + index + 1}
+                    </td>
                     
                     {/* Brand & Tipe */}
                     <td className="px-6 py-4.5">
@@ -616,7 +673,7 @@ export default function Motors({ openCreate = false }) {
                     {/* Warna / Tahun */}
                     <td className="px-6 py-4.5">
                       <div className="capitalize">{motor.warna}</div>
-                      <div className="text-xs text-gray-400 mt-0.5">Tahun {motor.tahun} · <span className="uppercase font-medium text-orange-500">{motor.kondisi}</span></div>
+                      <div className="text-xs text-gray-400 mt-0.5">Tahun {motor.tahun} · <span className="uppercase font-medium text-[#10b981]">{motor.kondisi}</span></div>
                     </td>
 
                     {/* Identifikasi */}
@@ -627,7 +684,7 @@ export default function Motors({ openCreate = false }) {
 
                     {/* Harga Jual */}
                     <td className="px-6 py-4.5">
-                      <div className="font-semibold text-[#1a2f4f]">{formatRupiah(motor.harga_jual)}</div>
+                      <div className="font-semibold text-[#10b981]">{formatRupiah(motor.harga_jual)}</div>
                       <div className="text-[10px] text-gray-400">Beli: {formatRupiah(motor.harga_beli)}</div>
                     </td>
 
@@ -650,7 +707,7 @@ export default function Motors({ openCreate = false }) {
                       <div className="flex items-center justify-end gap-2">
                         <button
                           onClick={() => openDetailModal(motor)}
-                          className="p-1.5 text-gray-400 hover:text-[#1a2f4f] rounded-lg hover:bg-gray-100 transition-colors"
+                          className="p-1.5 text-gray-400 hover:text-[#10b981] rounded-lg hover:bg-gray-100 transition-colors"
                           title="Detail Motor"
                         >
                           <Eye size={16} />
@@ -659,7 +716,7 @@ export default function Motors({ openCreate = false }) {
                           <>
                             <button
                               onClick={() => openEditModal(motor)}
-                              className="p-1.5 text-gray-400 hover:text-[#f97316] rounded-lg hover:bg-gray-100 transition-colors"
+                              className="p-1.5 text-gray-400 hover:text-[#10b981] rounded-lg hover:bg-gray-100 transition-colors"
                               title="Edit"
                             >
                               <Edit2 size={16} />
@@ -731,7 +788,7 @@ export default function Motors({ openCreate = false }) {
             {/* Modal Header */}
             <div className="bg-[#1a2f4f] text-white px-6 py-4 flex items-center justify-between">
               <h2 className="text-lg font-bold flex items-center gap-2">
-                <Car size={20} className="text-[#f97316]" />
+                <Car size={20} className="text-[#10b981]" />
                 <span>{modalMode === 'create' ? 'Tambah Unit Motor' : 'Edit Unit Motor'}</span>
               </h2>
               <button onClick={() => setIsModalOpen(false)} className="text-white/60 hover:text-white transition-colors">
@@ -751,7 +808,7 @@ export default function Motors({ openCreate = false }) {
                     name="supplier_id"
                     value={formData.supplier_id}
                     onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:border-[#1a2f4f] outline-none text-sm"
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:border-[#10b981] focus:ring-1 focus:ring-[#10b981]/20 outline-none text-sm"
                   >
                     <option value="">-- Tanpa Supplier --</option>
                     {suppliers.map((s) => (
@@ -770,7 +827,7 @@ export default function Motors({ openCreate = false }) {
                     placeholder="Contoh: Honda, Yamaha, Suzuki"
                     value={formData.merk}
                     onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:border-[#1a2f4f] focus:ring-1 focus:ring-[#1a2f4f]/20 outline-none text-sm"
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:border-[#10b981] focus:ring-1 focus:ring-[#10b981]/20 outline-none text-sm"
                   />
                 </div>
 
@@ -784,7 +841,7 @@ export default function Motors({ openCreate = false }) {
                     placeholder="Contoh: Vario 160 ABS, NMAX 155"
                     value={formData.tipe}
                     onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:border-[#1a2f4f] focus:ring-1 focus:ring-[#1a2f4f]/20 outline-none text-sm"
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:border-[#10b981] focus:ring-1 focus:ring-[#10b981]/20 outline-none text-sm"
                   />
                 </div>
 
@@ -799,7 +856,7 @@ export default function Motors({ openCreate = false }) {
                     max={new Date().getFullYear() + 1}
                     value={formData.tahun}
                     onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:border-[#1a2f4f] focus:ring-1 focus:ring-[#1a2f4f]/20 outline-none text-sm"
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:border-[#10b981] focus:ring-1 focus:ring-[#10b981]/20 outline-none text-sm"
                   />
                 </div>
 
@@ -813,7 +870,7 @@ export default function Motors({ openCreate = false }) {
                     placeholder="Contoh: Hitam Matte, Merah Glossy"
                     value={formData.warna}
                     onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:border-[#1a2f4f] focus:ring-1 focus:ring-[#1a2f4f]/20 outline-none text-sm"
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:border-[#10b981] focus:ring-1 focus:ring-[#10b981]/20 outline-none text-sm"
                   />
                 </div>
 
@@ -824,7 +881,7 @@ export default function Motors({ openCreate = false }) {
                     name="kondisi"
                     value={formData.kondisi}
                     onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:border-[#1a2f4f] outline-none text-sm"
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:border-[#10b981] outline-none text-sm"
                   >
                     <option value="baru">Baru</option>
                     <option value="bekas">Bekas</option>
@@ -838,7 +895,7 @@ export default function Motors({ openCreate = false }) {
                     name="status"
                     value={formData.status}
                     onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:border-[#1a2f4f] outline-none text-sm"
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:border-[#10b981] outline-none text-sm"
                   >
                     <option value="tersedia">Tersedia</option>
                     <option value="reserved">Reserved</option>
@@ -856,7 +913,7 @@ export default function Motors({ openCreate = false }) {
                     placeholder="Masukkan nomor rangka resmi"
                     value={formData.no_rangka}
                     onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:border-[#1a2f4f] focus:ring-1 focus:ring-[#1a2f4f]/20 outline-none text-sm font-mono"
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:border-[#10b981] focus:ring-1 focus:ring-[#10b981]/20 outline-none text-sm font-mono"
                   />
                 </div>
 
@@ -870,7 +927,7 @@ export default function Motors({ openCreate = false }) {
                     placeholder="Masukkan nomor mesin resmi"
                     value={formData.no_mesin}
                     onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:border-[#1a2f4f] focus:ring-1 focus:ring-[#1a2f4f]/20 outline-none text-sm font-mono"
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:border-[#10b981] focus:ring-1 focus:ring-[#10b981]/20 outline-none text-sm font-mono"
                   />
                 </div>
 
@@ -883,7 +940,7 @@ export default function Motors({ openCreate = false }) {
                     placeholder="Contoh: P 1234 XX"
                     value={formData.no_polisi}
                     onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:border-[#1a2f4f] outline-none text-sm font-mono"
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:border-[#10b981] outline-none text-sm font-mono"
                   />
                 </div>
 
@@ -896,7 +953,7 @@ export default function Motors({ openCreate = false }) {
                     placeholder="Masukkan nomor BPKB"
                     value={formData.bpkb}
                     onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:border-[#1a2f4f] outline-none text-sm font-mono"
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:border-[#10b981] outline-none text-sm font-mono"
                   />
                 </div>
 
@@ -911,7 +968,7 @@ export default function Motors({ openCreate = false }) {
                     placeholder="Harga kulakan"
                     value={formData.harga_beli}
                     onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:border-[#1a2f4f] outline-none text-sm"
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:border-[#10b981] outline-none text-sm"
                   />
                 </div>
 
@@ -926,7 +983,7 @@ export default function Motors({ openCreate = false }) {
                     placeholder="Harga penawaran"
                     value={formData.harga_jual}
                     onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:border-[#1a2f4f] outline-none text-sm"
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:border-[#10b981] outline-none text-sm"
                   />
                 </div>
 
@@ -940,7 +997,7 @@ export default function Motors({ openCreate = false }) {
                     placeholder="Harga paling rendah (net)"
                     value={formData.harga_minimal}
                     onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:border-[#1a2f4f] outline-none text-sm"
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:border-[#10b981] outline-none text-sm"
                   />
                 </div>
 
@@ -953,7 +1010,7 @@ export default function Motors({ openCreate = false }) {
                     required
                     value={formData.tanggal_masuk}
                     onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:border-[#1a2f4f] outline-none text-sm"
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:border-[#10b981] outline-none text-sm"
                   />
                 </div>
 
@@ -999,7 +1056,7 @@ export default function Motors({ openCreate = false }) {
                                 </div>
                               )}
                               {photo.is_primary && (
-                                <span className="absolute top-1 left-1 bg-[#f97316] text-white text-[9px] font-bold px-1.5 py-0.5 rounded">
+                                <span className="absolute top-1 left-1 bg-[#10b981] text-white text-[9px] font-bold px-1.5 py-0.5 rounded">
                                   Utama
                                 </span>
                               )}
@@ -1051,8 +1108,9 @@ export default function Motors({ openCreate = false }) {
                 <button
                   type="submit"
                   disabled={submitLoading}
-                  className="px-5 py-2 bg-[#f97316] hover:bg-orange-600 disabled:opacity-50 text-white rounded-xl text-sm font-semibold shadow-lg shadow-orange-500/10 active:scale-[0.98] transition-all"
+                  className="px-5 py-2 bg-[#10b981] hover:bg-emerald-600 disabled:opacity-50 text-white rounded-xl text-sm font-semibold shadow-lg shadow-emerald-500/20 active:scale-[0.98] transition-all flex items-center gap-2"
                 >
+                  {submitLoading ? <Loader2 size={16} className="animate-spin" /> : null}
                   {submitLoading ? 'Menyimpan...' : 'Simpan Unit'}
                 </button>
               </div>
@@ -1070,7 +1128,7 @@ export default function Motors({ openCreate = false }) {
             {/* Header */}
             <div className="bg-[#1a2f4f] text-white px-6 py-4 flex items-center justify-between">
               <h2 className="text-lg font-bold flex items-center gap-2">
-                <Eye size={20} className="text-[#f97316]" />
+                <Eye size={20} className="text-[#10b981]" />
                 <span>Spesifikasi Detail Motor</span>
               </h2>
               <button onClick={() => setIsDetailOpen(false)} className="text-white/60 hover:text-white transition-colors">
@@ -1125,7 +1183,7 @@ export default function Motors({ openCreate = false }) {
                             </div>
                           )}
                           {photo.is_primary && (
-                            <span className="absolute top-1 left-1 bg-[#f97316] text-white text-[9px] font-bold px-1.5 py-0.5 rounded">
+                            <span className="absolute top-1 left-1 bg-[#10b981] text-white text-[9px] font-bold px-1.5 py-0.5 rounded">
                               Utama
                             </span>
                           )}
@@ -1181,9 +1239,9 @@ export default function Motors({ openCreate = false }) {
                 </div>
                 <div>
                   <p className="text-[10px] text-gray-400 uppercase font-semibold flex items-center gap-1">
-                    <DollarSign size={12} className="text-[#f97316]" /> Harga Jual
+                    <DollarSign size={12} className="text-[#10b981]" /> Harga Jual
                   </p>
-                  <p className="font-bold text-[#f97316]">{formatRupiah(selectedMotor.harga_jual)}</p>
+                  <p className="font-bold text-[#10b981]">{formatRupiah(selectedMotor.harga_jual)}</p>
                 </div>
 
                 <div>
@@ -1237,8 +1295,9 @@ export default function Motors({ openCreate = false }) {
               <button
                 onClick={handleDelete}
                 disabled={submitLoading}
-                className="flex-1 px-4 py-2 bg-red-500 hover:bg-red-600 disabled:opacity-50 text-white rounded-xl text-xs font-semibold shadow-lg shadow-red-500/10 transition-colors"
+                className="flex-1 px-4 py-2 bg-red-500 hover:bg-red-600 disabled:opacity-50 text-white rounded-xl text-xs font-semibold shadow-lg shadow-red-500/10 transition-colors flex items-center justify-center gap-2"
               >
+                {submitLoading ? <Loader2 size={14} className="animate-spin" /> : null}
                 {submitLoading ? 'Menghapus...' : 'Hapus Unit'}
               </button>
             </div>

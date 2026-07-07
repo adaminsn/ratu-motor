@@ -1,3 +1,4 @@
+// src/pages/admin/Transaksi.jsx
 import { useEffect, useState, useCallback } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import {
@@ -5,8 +6,8 @@ import {
   ChevronLeft, ChevronRight, X, Eye, ShieldAlert,
   AlertCircle, DollarSign, Calendar, Users,
   MapPin, Phone, CreditCard, CheckCircle2, Clock,
-  Car, FileText, Download
-} from 'lucide-react' // ← Tambahkan FileText, Download
+  Car, FileText, Download, Loader2
+} from 'lucide-react'
 import api from '../../api/axios'
 import toast from 'react-hot-toast'
 
@@ -38,6 +39,57 @@ const STATUS_BADGES = {
   lunas: 'bg-emerald-50 text-emerald-700 border-emerald-200',
   pending: 'bg-amber-50 text-amber-700 border-amber-200'
 }
+
+// ===== SKELETON COMPONENTS =====
+
+// Skeleton untuk Header
+const SkeletonHeader = () => (
+  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 animate-pulse">
+    <div>
+      <div className="h-8 w-48 bg-gray-200 rounded-lg" />
+      <div className="h-4 w-64 bg-gray-200 rounded-lg mt-1" />
+    </div>
+    <div className="h-10 w-40 bg-gray-200 rounded-xl" />
+  </div>
+)
+
+// Skeleton untuk Filters
+const SkeletonFilters = () => (
+  <div className="bg-white rounded-xl shadow-sm p-4 flex flex-col md:flex-row md:items-center gap-4 animate-pulse">
+    <div className="flex-1 h-11 bg-gray-200 rounded-xl" />
+    <div className="h-11 w-40 bg-gray-200 rounded-xl" />
+    <div className="h-11 w-40 bg-gray-200 rounded-xl" />
+  </div>
+)
+
+// Skeleton untuk Table
+const SkeletonTable = () => (
+  <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100 animate-pulse">
+    <div className="p-4 border-b border-gray-100">
+      <div className="h-5 w-32 bg-gray-200 rounded" />
+    </div>
+    {[1, 2, 3, 4, 5].map((i) => (
+      <div key={i} className="p-4 border-b border-gray-100 flex items-center gap-4">
+        <div className="flex-1">
+          <div className="h-4 w-32 bg-gray-200 rounded" />
+          <div className="h-3 w-24 bg-gray-200 rounded mt-1" />
+        </div>
+        <div className="h-4 w-28 bg-gray-200 rounded" />
+        <div className="h-4 w-24 bg-gray-200 rounded" />
+        <div className="h-4 w-20 bg-gray-200 rounded" />
+        <div className="flex gap-2">
+          <div className="h-6 w-20 bg-gray-200 rounded-full" />
+          <div className="h-6 w-20 bg-gray-200 rounded-full" />
+        </div>
+        <div className="flex gap-2">
+          <div className="h-8 w-8 bg-gray-200 rounded-lg" />
+          <div className="h-8 w-8 bg-gray-200 rounded-lg" />
+          <div className="h-8 w-8 bg-gray-200 rounded-lg" />
+        </div>
+      </div>
+    ))}
+  </div>
+)
 
 export default function Transaksi({ openCreate = false }) {
   const [searchParams, setSearchParams] = useSearchParams()
@@ -207,13 +259,10 @@ export default function Transaksi({ openCreate = false }) {
     }
   }
 
-  // Transaksi.jsx - Ubah fungsi downloadInvoice
-
   const downloadInvoice = async (transaksiId) => {
     try {
       const token = localStorage.getItem('token');
 
-      // Pakai fetch dengan Authorization header
       const response = await fetch(`http://localhost:8000/api/admin/transaksi/${transaksiId}/invoice`, {
         method: 'GET',
         headers: {
@@ -229,7 +278,6 @@ export default function Transaksi({ openCreate = false }) {
         return;
       }
 
-      // Download PDF
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
@@ -247,20 +295,34 @@ export default function Transaksi({ openCreate = false }) {
     }
   };
 
+  // ===== RENDER SKELETON SAAT LOADING =====
+  if (loading) {
+    return (
+      <div className="space-y-4 md:space-y-6 pb-8">
+        <SkeletonHeader />
+        <SkeletonFilters />
+        <SkeletonTable />
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-4 md:space-y-6 pb-8">
 
       {/* ===== HEADER ===== */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-[#1a2f4f]">Transaksi Penjualan</h1>
+          <h1 className="text-2xl font-bold text-[#1a2f4f] flex items-center gap-2">
+            <ShoppingCart size={24} className="text-[#10b981]" />
+            Transaksi Penjualan
+          </h1>
           <p className="text-sm text-gray-500 mt-1">
             Kelola transaksi penjualan motor, riwayat pembeli, dan pembayaran
           </p>
         </div>
         <button
           onClick={openCreateModal}
-          className="flex items-center justify-center gap-2 bg-[#f97316] hover:bg-orange-600 text-white font-semibold px-4 py-2.5 rounded-xl shadow-lg shadow-orange-500/10 active:scale-[0.98] transition-all duration-200"
+          className="flex items-center justify-center gap-2 bg-[#10b981] hover:bg-emerald-600 text-white font-semibold px-4 py-2.5 rounded-xl shadow-lg shadow-emerald-500/20 active:scale-[0.98] transition-all duration-200"
         >
           <Plus size={18} />
           <span>Input Transaksi</span>
@@ -280,7 +342,7 @@ export default function Transaksi({ openCreate = false }) {
               setSearch(e.target.value)
               setCurrentPage(1)
             }}
-            className="w-full pl-11 pr-4 py-2.5 border border-gray-200 rounded-xl focus:border-[#1a2f4f] focus:ring-2 focus:ring-[#1a2f4f]/10 outline-none text-sm"
+            className="w-full pl-11 pr-4 py-2.5 border border-gray-200 rounded-xl focus:border-[#10b981] focus:ring-2 focus:ring-[#10b981]/10 outline-none text-sm"
           />
         </div>
 
@@ -292,7 +354,7 @@ export default function Transaksi({ openCreate = false }) {
               setMetodeFilter(e.target.value)
               setCurrentPage(1)
             }}
-            className="border border-gray-200 rounded-xl px-4 py-2.5 outline-none text-sm bg-white focus:border-[#1a2f4f]"
+            className="border border-gray-200 rounded-xl px-4 py-2.5 outline-none text-sm bg-white focus:border-[#10b981] focus:ring-2 focus:ring-[#10b981]/10"
           >
             <option value="">Semua Metode</option>
             <option value="tunai">Tunai</option>
@@ -306,7 +368,7 @@ export default function Transaksi({ openCreate = false }) {
             setStatusFilter(e.target.value)
             setCurrentPage(1)
           }}
-          className="border border-gray-200 rounded-xl px-4 py-2.5 outline-none text-sm bg-white focus:border-[#1a2f4f]"
+          className="border border-gray-200 rounded-xl px-4 py-2.5 outline-none text-sm bg-white focus:border-[#10b981] focus:ring-2 focus:ring-[#10b981]/10"
         >
           <option value="">Semua Status</option>
           <option value="lunas">Lunas</option>
@@ -317,12 +379,7 @@ export default function Transaksi({ openCreate = false }) {
 
       {/* ===== TABLE CONTAINER ===== */}
       <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100">
-        {loading ? (
-          <div className="flex flex-col items-center justify-center py-20">
-            <div className="w-10 h-10 border-4 border-[#1a2f4f] border-t-[#f97316] rounded-full animate-spin" />
-            <p className="text-gray-400 text-xs mt-4">Memuat riwayat transaksi...</p>
-          </div>
-        ) : error ? (
+        {error ? (
           <div className="p-8 text-center text-red-500">
             <AlertCircle size={32} className="mx-auto mb-2" />
             <p>{error}</p>
@@ -334,12 +391,19 @@ export default function Transaksi({ openCreate = false }) {
           <div className="py-16 text-center text-gray-400 text-sm">
             <ShoppingCart size={48} className="mx-auto mb-3 text-gray-300" />
             <p>Belum ada transaksi penjualan yang tercatat</p>
+            <button
+              onClick={openCreateModal}
+              className="mt-3 text-[#10b981] hover:text-emerald-600 font-medium text-sm"
+            >
+              Input transaksi pertama →
+            </button>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="bg-gray-50 border-b border-gray-100 text-xs text-gray-400 uppercase tracking-wider">
+                  <th className="px-6 py-4 font-semibold">#</th>
                   <th className="px-6 py-4 font-semibold">Pembeli</th>
                   <th className="px-6 py-4 font-semibold">Motor</th>
                   <th className="px-6 py-4 font-semibold">Tanggal</th>
@@ -349,8 +413,11 @@ export default function Transaksi({ openCreate = false }) {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50 text-sm text-gray-700">
-                {transaksis.map((trx) => (
+                {transaksis.map((trx, index) => (
                   <tr key={trx.id} className="hover:bg-gray-50/50 transition-colors">
+                    <td className="px-6 py-4 text-xs text-gray-400">
+                      {((currentPage - 1) * 10) + index + 1}
+                    </td>
 
                     <td className="px-6 py-4">
                       <div className="font-semibold text-gray-800">{trx.nama_pembeli}</div>
@@ -370,7 +437,7 @@ export default function Transaksi({ openCreate = false }) {
                       {formatDate(trx.tanggal_transaksi)}
                     </td>
 
-                    <td className="px-6 py-4 font-bold text-[#1a2f4f]">
+                    <td className="px-6 py-4 font-bold text-[#10b981]">
                       {formatRupiah(trx.harga_kesepakatan)}
                     </td>
 
@@ -389,14 +456,14 @@ export default function Transaksi({ openCreate = false }) {
                       <div className="flex items-center justify-end gap-2">
                         <button
                           onClick={() => openDetailModal(trx)}
-                          className="p-1.5 text-gray-400 hover:text-[#1a2f4f] rounded-lg hover:bg-gray-100"
+                          className="p-1.5 text-gray-400 hover:text-[#10b981] rounded-lg hover:bg-gray-100"
                           title="Detail Nota"
                         >
                           <Eye size={16} />
                         </button>
                         <button
                           onClick={() => downloadInvoice(trx.id)}
-                          className="p-1.5 text-gray-400 hover:text-[#f97316] rounded-lg hover:bg-gray-100"
+                          className="p-1.5 text-gray-400 hover:text-[#10b981] rounded-lg hover:bg-gray-100"
                           title="Download Invoice PDF"
                         >
                           <FileText size={16} />
@@ -454,7 +521,7 @@ export default function Transaksi({ openCreate = false }) {
 
             <div className="bg-[#1a2f4f] text-white px-6 py-4 flex items-center justify-between">
               <h2 className="text-lg font-bold flex items-center gap-2">
-                <ShoppingCart size={20} className="text-[#f97316]" />
+                <ShoppingCart size={20} className="text-[#10b981]" />
                 <span>Input Transaksi Penjualan Baru</span>
               </h2>
               <button onClick={() => setIsModalOpen(false)} className="text-white/60 hover:text-white">
@@ -471,7 +538,7 @@ export default function Transaksi({ openCreate = false }) {
                   required
                   value={formData.motor_id}
                   onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:border-[#1a2f4f] outline-none text-sm bg-white"
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:border-[#10b981] focus:ring-1 focus:ring-[#10b981]/20 outline-none text-sm bg-white"
                 >
                   <option value="">-- Pilih Unit Motor --</option>
                   {availableMotors.map(motor => (
@@ -487,10 +554,10 @@ export default function Transaksi({ openCreate = false }) {
               </div>
 
               {selectedMotorDetail && (
-                <div className="bg-orange-50 border border-orange-200 rounded-xl p-3 text-xs text-gray-700 flex items-center justify-between">
+                <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-3 text-xs text-gray-700 flex items-center justify-between">
                   <div>
                     <span className="font-semibold text-gray-600">Harga Penawaran:</span>{' '}
-                    <span className="font-bold text-[#1a2f4f]">{formatRupiah(selectedMotorDetail.harga_jual)}</span>
+                    <span className="font-bold text-[#10b981]">{formatRupiah(selectedMotorDetail.harga_jual)}</span>
                   </div>
                   {selectedMotorDetail.harga_minimal && (
                     <div>
@@ -512,7 +579,7 @@ export default function Transaksi({ openCreate = false }) {
                     placeholder="Contoh: Budi Santoso"
                     value={formData.nama_pembeli}
                     onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:border-[#1a2f4f] outline-none text-sm"
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:border-[#10b981] outline-none text-sm"
                   />
                 </div>
 
@@ -525,7 +592,7 @@ export default function Transaksi({ openCreate = false }) {
                     placeholder="Contoh: 081234567890"
                     value={formData.no_hp_pembeli}
                     onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:border-[#1a2f4f] outline-none text-sm font-mono"
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:border-[#10b981] outline-none text-sm font-mono"
                   />
                 </div>
 
@@ -538,7 +605,7 @@ export default function Transaksi({ openCreate = false }) {
                     placeholder="Masukkan alamat lengkap..."
                     value={formData.alamat_pembeli}
                     onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:border-[#1a2f4f] outline-none text-sm"
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:border-[#10b981] outline-none text-sm"
                   />
                 </div>
 
@@ -552,7 +619,7 @@ export default function Transaksi({ openCreate = false }) {
                     placeholder="Harga deal"
                     value={formData.harga_kesepakatan}
                     onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:border-[#1a2f4f] outline-none text-sm font-semibold"
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:border-[#10b981] outline-none text-sm font-semibold"
                   />
                 </div>
 
@@ -564,7 +631,7 @@ export default function Transaksi({ openCreate = false }) {
                     required
                     value={formData.tanggal_transaksi}
                     onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:border-[#1a2f4f] outline-none text-sm"
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:border-[#10b981] outline-none text-sm"
                   />
                 </div>
 
@@ -574,7 +641,7 @@ export default function Transaksi({ openCreate = false }) {
                     name="metode_pembayaran"
                     value={formData.metode_pembayaran}
                     onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:border-[#1a2f4f] outline-none text-sm bg-white"
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:border-[#10b981] outline-none text-sm bg-white"
                   >
                     <option value="tunai">Tunai</option>
                     <option value="kredit">Kredit</option>
@@ -587,7 +654,7 @@ export default function Transaksi({ openCreate = false }) {
                     name="status_pembayaran"
                     value={formData.status_pembayaran}
                     onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:border-[#1a2f4f] outline-none text-sm bg-white"
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:border-[#10b981] outline-none text-sm bg-white"
                   >
                     <option value="lunas">Lunas</option>
                     <option value="pending">Pending</option>
@@ -602,7 +669,7 @@ export default function Transaksi({ openCreate = false }) {
                     placeholder="Catatan tambahan"
                     value={formData.keterangan}
                     onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:border-[#1a2f4f] outline-none text-sm"
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:border-[#10b981] outline-none text-sm"
                   />
                 </div>
 
@@ -619,8 +686,9 @@ export default function Transaksi({ openCreate = false }) {
                 <button
                   type="submit"
                   disabled={submitLoading}
-                  className="px-5 py-2 bg-[#f97316] hover:bg-orange-600 disabled:opacity-50 text-white rounded-xl text-sm font-semibold shadow-lg shadow-orange-500/10 active:scale-[0.98] transition-all"
+                  className="px-5 py-2 bg-[#10b981] hover:bg-emerald-600 disabled:opacity-50 text-white rounded-xl text-sm font-semibold shadow-lg shadow-emerald-500/20 active:scale-[0.98] transition-all flex items-center gap-2"
                 >
+                  {submitLoading ? <Loader2 size={16} className="animate-spin" /> : null}
                   {submitLoading ? 'Menyimpan...' : 'Proses Penjualan'}
                 </button>
               </div>
@@ -637,7 +705,7 @@ export default function Transaksi({ openCreate = false }) {
 
             <div className="bg-[#1a2f4f] text-white px-6 py-4 flex items-center justify-between">
               <h2 className="text-lg font-bold flex items-center gap-2">
-                <ShoppingCart size={20} className="text-[#f97316]" />
+                <ShoppingCart size={20} className="text-[#10b981]" />
                 <span>Nota Ringkasan Penjualan</span>
               </h2>
               <button onClick={() => setIsDetailOpen(false)} className="text-white/60 hover:text-white">
@@ -655,7 +723,7 @@ export default function Transaksi({ openCreate = false }) {
 
               <div className="space-y-2">
                 <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1.5">
-                  <Users size={14} /> Data Pembeli
+                  <Users size={14} className="text-[#10b981]" /> Data Pembeli
                 </h4>
                 <div className="bg-gray-50 rounded-xl p-3 space-y-1">
                   <div className="flex justify-between"><span className="text-gray-400">Nama:</span> <span className="font-semibold text-gray-800">{selectedTransaksi.nama_pembeli}</span></div>
@@ -667,7 +735,7 @@ export default function Transaksi({ openCreate = false }) {
               {selectedTransaksi.motor && (
                 <div className="space-y-2">
                   <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1.5">
-                    <Car size={14} /> Unit Kendaraan
+                    <Car size={14} className="text-[#10b981]" /> Unit Kendaraan
                   </h4>
                   <div className="bg-gray-50 rounded-xl p-3 space-y-1">
                     <div className="flex justify-between"><span className="text-gray-400">Motor:</span> <span className="font-semibold text-gray-800">{selectedTransaksi.motor.merk} {selectedTransaksi.motor.tipe}</span></div>
@@ -681,12 +749,12 @@ export default function Transaksi({ openCreate = false }) {
 
               <div className="space-y-2">
                 <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1.5">
-                  <CreditCard size={14} /> Rincian Pembayaran
+                  <CreditCard size={14} className="text-[#10b981]" /> Rincian Pembayaran
                 </h4>
                 <div className="bg-gray-50 rounded-xl p-3 space-y-1.5">
                   <div className="flex justify-between"><span className="text-gray-400">Metode:</span> <span className="font-semibold capitalize text-gray-800">{selectedTransaksi.metode_pembayaran}</span></div>
                   <div className="flex justify-between"><span className="text-gray-400">Status:</span> <span className="font-semibold capitalize text-gray-800">{selectedTransaksi.status_pembayaran}</span></div>
-                  <div className="flex justify-between pt-1 border-t border-gray-200/50"><span className="text-gray-500 font-bold text-sm">TOTAL:</span> <span className="font-bold text-lg text-[#f97316]">{formatRupiah(selectedTransaksi.harga_kesepakatan)}</span></div>
+                  <div className="flex justify-between pt-1 border-t border-gray-200/50"><span className="text-gray-500 font-bold text-sm">TOTAL:</span> <span className="font-bold text-lg text-[#10b981]">{formatRupiah(selectedTransaksi.harga_kesepakatan)}</span></div>
                 </div>
               </div>
 
@@ -698,7 +766,7 @@ export default function Transaksi({ openCreate = false }) {
               <div className="flex justify-end gap-3 pt-3 border-t border-gray-100">
                 <button
                   onClick={() => downloadInvoice(selectedTransaksi.id)}
-                  className="px-4 py-2 bg-[#f97316] text-white rounded-xl text-xs font-semibold hover:bg-orange-600 flex items-center gap-2 transition-colors"
+                  className="px-4 py-2 bg-[#10b981] text-white rounded-xl text-xs font-semibold hover:bg-emerald-600 flex items-center gap-2 transition-colors"
                 >
                   <Download size={14} />
                   Download PDF
@@ -738,8 +806,9 @@ export default function Transaksi({ openCreate = false }) {
               <button
                 onClick={handleDelete}
                 disabled={submitLoading}
-                className="flex-1 px-4 py-2 bg-red-500 hover:bg-red-600 disabled:opacity-50 text-white rounded-xl text-xs font-semibold shadow-lg shadow-red-500/10 transition-colors"
+                className="flex-1 px-4 py-2 bg-red-500 hover:bg-red-600 disabled:opacity-50 text-white rounded-xl text-xs font-semibold shadow-lg shadow-red-500/10 transition-colors flex items-center justify-center gap-2"
               >
+                {submitLoading ? <Loader2 size={14} className="animate-spin" /> : null}
                 {submitLoading ? 'Memproses...' : 'Ya, Batalkan'}
               </button>
             </div>
