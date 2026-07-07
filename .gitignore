@@ -26,3 +26,5 @@ public/build/
 /dist/ 
 /build/ 
 /.vite/ 
+.vercel
+.env*
