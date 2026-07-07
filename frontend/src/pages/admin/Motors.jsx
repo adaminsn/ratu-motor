@@ -33,7 +33,7 @@ const formatDate = (dateStr) => {
 const getPhotoUrl = (path) => {
   if (!path) return ''
   if (path.startsWith('http')) return path
-  const baseUrl = 'http://127.0.0.1:8000'
+  const baseUrl = '${import.meta.env.VITE_API_URL}/api'
   let cleanPath = path.replace(/^storage\//, '')
   return `${baseUrl}/storage/${cleanPath}`
 }

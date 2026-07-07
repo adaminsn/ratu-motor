@@ -249,7 +249,7 @@ export default function Keuangan() {
       if (startDate) params.append('start_date', startDate)
       if (endDate) params.append('end_date', endDate)
       
-      const response = await fetch(`http://localhost:8000/api/admin/keuangan/export-pdf?${params.toString()}`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/admin/keuangan/export-pdf?${params.toString()}`, {
         method: 'GET',
         headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/json' },
       })
@@ -283,7 +283,7 @@ export default function Keuangan() {
       if (startDate) params.append('start_date', startDate)
       if (endDate) params.append('end_date', endDate)
       
-      const response = await fetch(`http://localhost:8000/api/admin/keuangan/export-excel?${params.toString()}`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/admin/keuangan/export-excel?${params.toString()}`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,

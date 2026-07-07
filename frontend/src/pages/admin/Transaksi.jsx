@@ -263,7 +263,7 @@ export default function Transaksi({ openCreate = false }) {
     try {
       const token = localStorage.getItem('token');
 
-      const response = await fetch(`http://localhost:8000/api/admin/transaksi/${transaksiId}/invoice`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/admin/transaksi/${transaksiId}/invoice`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
