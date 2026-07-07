@@ -414,11 +414,11 @@ export default function DetailMotor() {
               </div>
               <div className="flex items-center gap-2 text-sm text-white/70 mt-1">
                 <Phone size={14} />
-                <span>0812-3456-7890</span>
+                <span>0812-5244-6195</span>
               </div>
               <div className="flex items-center gap-2 text-sm text-white/70 mt-1">
                 <Clock size={14} />
-                <span>08.00 - 20.00 (Senin-Sabtu)</span>
+                <span>09.00 - 15.00 (Setiap Hari)</span>
               </div>
             </div>
 

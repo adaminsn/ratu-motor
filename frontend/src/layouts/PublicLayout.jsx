@@ -215,8 +215,8 @@ export default function PublicLayout() {
             <div>
               <h3 className="font-semibold mb-4">Kontak</h3>
               <ul className="space-y-2 text-white/60 text-sm">
-                <li className="flex items-center gap-2"><MapPin size={16} />Jl. Raya Banyuwangi No. 123</li>
-                <li className="flex items-center gap-2"><Phone size={16} />0812-3456-7890</li>
+                <li className="flex items-start gap-2"><MapPin size={16} className="mt-0.5 shrink-0" />Jl. Piere Tendean No.1, Karangrejo, Kec. Banyuwangi, Kabupaten Banyuwangi, Jawa Timur 68411</li>
+                <li className="flex items-center gap-2"><Phone size={16} />0812-5244-6195</li>
                 <li className="flex items-center gap-2"><Mail size={16} />info@ratumotor.com</li>
               </ul>
             </div>
@@ -225,9 +225,7 @@ export default function PublicLayout() {
             <div>
               <h3 className="font-semibold mb-4">Jam Operasional</h3>
               <ul className="space-y-2 text-white/60 text-sm">
-                <li className="flex items-center gap-2"><Clock size={16} />Senin - Jumat: 08.00 - 20.00</li>
-                <li className="flex items-center gap-2"><Clock size={16} />Sabtu: 08.00 - 18.00</li>
-                <li className="flex items-center gap-2"><Clock size={16} />Minggu: Tutup</li>
+                <li className="flex items-center gap-2"><Clock size={16} />Setiap Hari: 09.00 - 15.00</li>
               </ul>
             </div>
 

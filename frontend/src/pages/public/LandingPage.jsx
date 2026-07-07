@@ -60,8 +60,6 @@ export default function LandingPage() {
 
   const partners = [
     { name: 'Adira Finance', icon: '🏦' },
-    { name: 'FIF Group', icon: '💰' },
-    { name: 'BAF', icon: '🏛️' },
   ]
 
   return (
